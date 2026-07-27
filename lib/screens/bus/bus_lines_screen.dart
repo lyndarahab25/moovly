@@ -1,782 +1,676 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-import 'package:moovly/screens/subscriptions/subscriptions_screen.dart';
-import '../home/home_screen.dart';
-import '../notifications/notifications_screen.dart';
-import '../profile/profile_screen.dart';
-import '../qr/qr_payment_screen.dart';
-import 'bus_line_detail_screen.dart';
+import 'package:moovly/screens/bus/bus_line_detail_screen.dart';
+import 'package:moovly/screens/home/home_screen.dart';
+import 'package:moovly/screens/notifications/notifications_screen.dart';
+import 'package:moovly/screens/profile/profile_screen.dart';
+import 'package:moovly/screens/qr/qr_payment_screen.dart';
 
 class BusLinesScreen extends StatefulWidget {
   const BusLinesScreen({super.key});
-
-  static const blue = Color(0xFF0a1628);
-  static const sky = Color(0xFF2196F3);
-  static const bg = Color(0xFFF0F6FF);
-  static const muted = Color(0xFF6B7280);
 
   @override
   State<BusLinesScreen> createState() => _BusLinesScreenState();
 }
 
-class _BusLinesScreenState extends State<BusLinesScreen> {
+class _BusLinesScreenState extends State<BusLinesScreen>
+    with SingleTickerProviderStateMixin {
   String _selectedFilter = 'Toutes';
-  String _searchText = '';
+  final List<String> _filters = ['Toutes', 'Populaires', 'Express', 'Nuit'];
+  int _currentIndex = 1; // 1 = Bus
 
-  final List<_BusLine> _lines = const [
-    _BusLine(
-      letter: 'A',
-      title: 'Gare Centrale → Aéroport',
-      subtitle: 'Toutes les 8 min',
-      time: '06:00 - 22:00',
-      color: Color(0xFF2196F3),
-      darkColor: Color(0xFF0a1628),
-      category: 'Populaires',
-      nextBus: '3 min',
-      price: '50 DA',
-    ),
-    _BusLine(
-      letter: 'B',
-      title: 'Université → Centre-ville',
-      subtitle: 'Toutes les 10 min',
-      time: '05:30 - 21:30',
-      color: Color(0xFF1D9E75),
-      darkColor: Color(0xFF085041),
-      category: 'Populaires',
-      nextBus: '7 min',
-      price: '50 DA',
-    ),
-    _BusLine(
-      letter: 'C',
-      title: 'Port → Gare Routière',
-      subtitle: 'Toutes les 12 min',
-      time: '06:15 - 22:15',
-      color: Color(0xFFFF7A1A),
-      darkColor: Color(0xFF633806),
-      category: 'Express',
-      nextBus: '12 min',
-      price: '75 DA',
-    ),
-    _BusLine(
-      letter: 'D',
-      title: 'Zone Industrielle → Centre',
-      subtitle: 'Toutes les 15 min',
-      time: '05:45 - 21:45',
-      color: Color(0xFF6D4DE6),
-      darkColor: Color(0xFF26215C),
-      category: 'Express',
-      nextBus: '15 min',
-      price: '75 DA',
-    ),
-    _BusLine(
-      letter: 'N1',
-      title: 'Centre-ville → Aéroport',
-      subtitle: 'Toutes les 30 min',
-      time: '22:00 - 06:00',
-      color: Color(0xFFE24B4A),
-      darkColor: Color(0xFF501313),
-      category: 'Nuit',
-      nextBus: '25 min',
-      price: '100 DA',
-    ),
+  late AnimationController _animController;
+  late Animation<double> _fadeAnimation;
+
+  // Palette officielle Bleu / Mauve de l'application
+  final Color _primaryBlue = const Color(0xFF1E3A8A);
+  final Color _accentMauve = const Color(0xFF7C3AED);
+
+  final List<Map<String, dynamic>> _busLines = [
+    {
+      'letter': 'A',
+      'title': 'Ligne A',
+      'route': 'Gare Centrale → Aéroport',
+      'gradient': const [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+      'frequency': 'Toutes les 8 min',
+      'firstBus': '06:00',
+      'lastBus': '22:00',
+      'hours': '06:00 - 22:00',
+      'next': '3 min',
+      'tag': 'Populaires',
+      'price': '50 DA',
+      'stops': const [
+        BusStopInfo("Gare Centrale", "06:00"),
+        BusStopInfo("Place Audin", "06:08"),
+        BusStopInfo("Aéroport", "06:30"),
+      ],
+    },
+    {
+      'letter': 'B',
+      'title': 'Ligne B',
+      'route': 'Université → Pôle Urbain',
+      'gradient': const [Color(0xFF7C3AED), Color(0xFF9333EA)],
+      'frequency': 'Toutes les 12 min',
+      'firstBus': '06:30',
+      'lastBus': '21:00',
+      'hours': '06:30 - 21:00',
+      'next': '7 min',
+      'tag': 'Express',
+      'price': '40 DA',
+      'stops': const [
+        BusStopInfo("Université", "06:30"),
+        BusStopInfo("Centre Ville", "06:45"),
+        BusStopInfo("Pôle Urbain", "07:00"),
+      ],
+    },
+    {
+      'letter': 'C',
+      'title': 'Ligne C',
+      'route': 'Centre-ville → Zone Industrielle',
+      'gradient': const [Color(0xFF4338CA), Color(0xFF6366F1)],
+      'frequency': 'Toutes les 15 min',
+      'firstBus': '05:30',
+      'lastBus': '23:00',
+      'hours': '05:30 - 23:00',
+      'next': '12 min',
+      'tag': 'Nuit',
+      'price': '60 DA',
+      'stops': const [
+        BusStopInfo("Centre-ville", "05:30"),
+        BusStopInfo("Gare Routière", "05:50"),
+        BusStopInfo("Zone Industrielle", "06:15"),
+      ],
+    },
   ];
 
-  List<_BusLine> get _filtered {
-    return _lines.where((l) {
-      final matchFilter =
-          _selectedFilter == 'Toutes' || l.category == _selectedFilter;
-      final q = _searchText.toLowerCase();
-      final matchSearch = q.isEmpty ||
-          l.letter.toLowerCase().contains(q) ||
-          l.title.toLowerCase().contains(q);
-      return matchFilter && matchSearch;
-    }).toList();
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    _fadeAnimation = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
   }
 
-  List<BusStopInfo> _stopsForLine(String letter) {
-    switch (letter) {
-      case 'A':
-        return const [
-          BusStopInfo('Gare Centrale', '06:00'),
-          BusStopInfo('Place Audin', '06:08'),
-          BusStopInfo('Khelifa Boukhalfa', '06:16'),
-          BusStopInfo('1er Mai', '06:22'),
-          BusStopInfo('Aéroport Houari Boumédiène', '06:30'),
-        ];
-      case 'B':
-        return const [
-          BusStopInfo('Université', '05:30'),
-          BusStopInfo('Ben Aknoun', '05:40'),
-          BusStopInfo('Didouche Mourad', '05:50'),
-          BusStopInfo('Centre-ville', '06:00'),
-        ];
-      case 'C':
-        return const [
-          BusStopInfo('Port', '06:15'),
-          BusStopInfo('El Biar', '06:27'),
-          BusStopInfo('Place Audin', '06:38'),
-          BusStopInfo('Gare Routière', '06:50'),
-        ];
-      case 'D':
-        return const [
-          BusStopInfo('Zone Industrielle', '05:45'),
-          BusStopInfo('1er Mai', '05:58'),
-          BusStopInfo('Didouche Mourad', '06:10'),
-          BusStopInfo('Centre', '06:22'),
-        ];
-      default:
-        return const [
-          BusStopInfo('Centre-ville', '22:00'),
-          BusStopInfo('Gare Centrale', '22:15'),
-          BusStopInfo('Aéroport', '22:30'),
-        ];
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  void _onNavTap(int index) {
+    if (index == _currentIndex) return;
+    setState(() => _currentIndex = index);
+
+    if (index == 0) {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const HomeScreen()));
+    } else if (index == 2) {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const QrPaymentScreen()));
+    } else if (index == 3) {
+      Navigator.pushReplacement(context,
+          MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+    } else if (index == 4) {
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final results = _filtered;
+    final filteredLines = _selectedFilter == 'Toutes'
+        ? _busLines
+        : _busLines.where((l) => l['tag'] == _selectedFilter).toList();
 
     return Scaffold(
-      backgroundColor: BusLinesScreen.bg,
-      body: CustomScrollView(
-        slivers: [
-          // ── AppBar ─────────────────────────────────────────────────
-          SliverAppBar(
-            expandedHeight: 110,
-            pinned: true,
-            backgroundColor: BusLinesScreen.blue,
-            foregroundColor: Colors.white,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF0a1628), Color(0xFF185FA5)],
-                  ),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // --- HEADER HAUT DE GAMME AVEC VRAI LOGO & STATS ---
+            Container(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_primaryBlue, _accentMauve],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: BusLinesScreen.sky,
-                                borderRadius: BorderRadius.circular(9),
-                              ),
-                              child: const Icon(Icons.directions_bus,
-                                  color: Colors.white, size: 18),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text('Moovly',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700)),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        const Text('Lignes de bus',
-                            style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w700)),
-                      ],
-                    ),
+                borderRadius:
+                    const BorderRadius.vertical(bottom: Radius.circular(30)),
+                boxShadow: [
+                  BoxShadow(
+                    color: _primaryBlue.withOpacity(0.25),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
                   ),
-                ),
+                ],
               ),
-            ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Stats ──────────────────────────────────────
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _StatCard(
-                        value: '${_lines.length}',
-                        label: 'Lignes',
-                        icon: Icons.route_rounded,
-                        color: BusLinesScreen.sky,
-                      ),
-                      const SizedBox(width: 10),
-                      const _StatCard(
-                        value: '18',
-                        label: 'Arrêts',
-                        icon: Icons.location_on_rounded,
-                        color: Color(0xFF1D9E75),
-                      ),
-                      const SizedBox(width: 10),
-                      const _StatCard(
-                        value: '24/7',
-                        label: 'Service',
-                        icon: Icons.access_time_rounded,
-                        color: Color(0xFFFF7A1A),
+                      Row(
+                        children: [
+                          InkWell(
+                            onTap: () => Navigator.pop(context),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              padding: const EdgeInsets.all(9),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(
+                                  Icons.arrow_back_ios_new_rounded,
+                                  color: Colors.white,
+                                  size: 16),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          // Vrai Logo professionnel Moovly
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(Icons.directions_bus_rounded,
+                                    color: _primaryBlue, size: 20),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text(
+                                "Moovly",
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 20),
 
-                  // ── Search ──────────────────────────────────────
-                  TextField(
-                    onChanged: (v) => setState(() => _searchText = v),
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher une ligne ou un arrêt...',
-                      hintStyle: const TextStyle(
-                          color: BusLinesScreen.muted, fontSize: 13),
-                      prefixIcon: const Icon(Icons.search_rounded,
-                          color: BusLinesScreen.muted, size: 20),
-                      suffixIcon: _searchText.isNotEmpty
-                          ? IconButton(
-                              onPressed: () => setState(() => _searchText = ''),
-                              icon: const Icon(Icons.close_rounded, size: 18))
-                          : null,
-                      filled: true,
-                      fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 12),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFDCE8F8)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: Color(0xFFDCE8F8)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: BusLinesScreen.sky, width: 1.5),
-                      ),
-                    ),
+                  // 3 Cartes de statistiques épurées et modernes
+                  Row(
+                    children: [
+                      _buildHeaderStat("5", "Lignes", Icons.alt_route_rounded),
+                      const SizedBox(width: 10),
+                      _buildHeaderStat(
+                          "18", "Arrêts", Icons.location_on_rounded),
+                      const SizedBox(width: 10),
+                      _buildHeaderStat(
+                          "24/7", "Service", Icons.schedule_rounded),
+                    ],
                   ),
-                  const SizedBox(height: 12),
-
-                  // ── Filtres ─────────────────────────────────────
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: ['Toutes', 'Populaires', 'Express', 'Nuit']
-                          .map((f) => Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: _FilterChip(
-                                  label: f,
-                                  active: _selectedFilter == f,
-                                  onTap: () =>
-                                      setState(() => _selectedFilter = f),
-                                ),
-                              ))
-                          .toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
                 ],
               ),
             ),
-          ),
 
-          // ── Liste ──────────────────────────────────────────────
-          results.isEmpty
-              ? const SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: _EmptyState(),
-                  ),
-                )
-              : SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: _LineCard(
-                          line: results[i],
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => BusLineDetailScreen(
-                                letter: results[i].letter,
-                                title: 'Ligne ${results[i].letter}',
-                                route: results[i].title,
-                                color: results[i].color,
-                                frequency: results[i]
-                                    .subtitle
-                                    .replaceAll('Toutes les ', ''),
-                                firstBus: results[i].time.split(' - ').first,
-                                lastBus: results[i].time.split(' - ').last,
-                                stops: _stopsForLine(results[i].letter),
-                              ),
-                            ),
-                          ),
+            // Barre de recherche & Filtres
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+              child: Column(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.03),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
+                      ],
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: const TextField(
+                      decoration: InputDecoration(
+                        hintText: "Rechercher une ligne ou un arrêt...",
+                        hintStyle:
+                            TextStyle(color: Color(0xFF94A3B8), fontSize: 13.5),
+                        prefixIcon: Icon(Icons.search_rounded,
+                            color: Color(0xFF94A3B8), size: 20),
+                        border: InputBorder.none,
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       ),
-                      childCount: results.length,
                     ),
                   ),
-                ),
-        ],
-      ),
-      bottomNavigationBar: const _BottomNav(currentIndex: 1),
-    );
-  }
-}
-
-// ── Bus Line Model ─────────────────────────────────────────────────────────────
-
-class _BusLine {
-  final String letter;
-  final String title;
-  final String subtitle;
-  final String time;
-  final Color color;
-  final Color darkColor;
-  final String category;
-  final String nextBus;
-  final String price;
-
-  const _BusLine({
-    required this.letter,
-    required this.title,
-    required this.subtitle,
-    required this.time,
-    required this.color,
-    required this.darkColor,
-    required this.category,
-    required this.nextBus,
-    required this.price,
-  });
-}
-
-// ── Line Card avec illustration SVG ───────────────────────────────────────────
-
-class _LineCard extends StatelessWidget {
-  final _BusLine line;
-  final VoidCallback onTap;
-
-  const _LineCard({required this.line, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFDCE8F8)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // ── Illustration SVG ───────────────────────────
-            ClipRRect(
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(20)),
-              child: SizedBox(
-                height: 130,
-                child: _BusIllustration(line: line),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 38,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _filters.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final filter = _filters[index];
+                        final isSelected = _selectedFilter == filter;
+                        return ChoiceChip(
+                          label: Text(filter),
+                          selected: isSelected,
+                          onSelected: (_) {
+                            setState(() => _selectedFilter = filter);
+                            _animController.reset();
+                            _animController.forward();
+                          },
+                          selectedColor: _primaryBlue,
+                          labelStyle: TextStyle(
+                            color: isSelected
+                                ? Colors.white
+                                : const Color(0xFF64748B),
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w500,
+                            fontSize: 13,
+                          ),
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
+                              color: isSelected
+                                  ? _primaryBlue
+                                  : const Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          showCheckmark: false,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
 
-            // ── Info bas ────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              line.title,
-                              style: const TextStyle(
-                                color: Color(0xFF0a1628),
-                                fontWeight: FontWeight.w700,
-                                fontSize: 14,
-                              ),
+            // --- CARTES DE BUS AVEC VISUEL HAUT DE GAMME ---
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ListView.separated(
+                    itemCount: filteredLines.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final line = filteredLines[index];
+                      final List<Color> gradientColors =
+                          line['gradient'] ?? [_primaryBlue, _accentMauve];
+
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              offset: const Offset(0, 6),
                             ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                const Icon(Icons.loop_rounded,
-                                    size: 12, color: Color(0xFF6B7280)),
-                                const SizedBox(width: 4),
-                                Text(
-                                  line.subtitle,
-                                  style: const TextStyle(
-                                    color: Color(0xFF6B7280),
-                                    fontSize: 12,
+                          ],
+                          border: Border.all(
+                              color: const Color(0xFFE2E8F0), width: 1),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: Column(
+                            children: [
+                              // En-tête de carte bicolore avec illustration bus stylisée
+                              Container(
+                                height: 110,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: gradientColors,
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                   ),
                                 ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: line.color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          line.price,
-                          style: TextStyle(
-                            color: line.color,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                                child: Stack(
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                line['title'] ?? '',
+                                                style: TextStyle(
+                                                  color: gradientColors[0],
+                                                  fontWeight: FontWeight.w900,
+                                                  fontSize: 13,
+                                                ),
+                                              ),
+                                            ),
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white
+                                                    .withOpacity(0.2),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                line['tag'] ?? '',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        const Spacer(),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 5),
+                                              decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.schedule_rounded,
+                                                      size: 13,
+                                                      color: gradientColors[0]),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    "Prochain : ${line['next']}",
+                                                    style: TextStyle(
+                                                      color: gradientColors[0],
+                                                      fontWeight:
+                                                          FontWeight.w800,
+                                                      fontSize: 11.5,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: List.generate(
+                                                    4,
+                                                    (_) => Container(
+                                                          width: 6,
+                                                          height: 6,
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: Colors.white
+                                                                .withOpacity(
+                                                                    0.6),
+                                                            shape:
+                                                                BoxShape.circle,
+                                                          ),
+                                                        )),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                    // Icône bus de haute qualité en arrière-plan
+                                    Positioned(
+                                      right: 5,
+                                      bottom: 0,
+                                      child: Icon(
+                                        Icons.directions_bus_filled_rounded,
+                                        size: 55,
+                                        color: Colors.white.withOpacity(0.18),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              // Corps de la carte
+                              Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            line['route'] ?? '',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 14,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                        ),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFEFF6FF),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            line['price'] ?? '',
+                                            style: TextStyle(
+                                              color: gradientColors[0],
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.refresh_rounded,
+                                            size: 14, color: Color(0xFF94A3B8)),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          line['frequency'] ?? '',
+                                          style: const TextStyle(
+                                              color: Color(0xFF64748B),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                        const SizedBox(width: 14),
+                                        const Icon(Icons.access_time_rounded,
+                                            size: 14, color: Color(0xFF94A3B8)),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          line['hours'] ?? '',
+                                          style: const TextStyle(
+                                              color: Color(0xFF64748B),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w500),
+                                        ),
+                                      ],
+                                    ),
+                                    const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 12),
+                                      child: Divider(
+                                          color: Color(0xFFF1F5F9), height: 1),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerRight,
+                                      child: InkWell(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  BusLineDetailScreen(
+                                                letter: line['letter'] ?? '',
+                                                title: line['title'] ?? '',
+                                                route: line['route'] ?? '',
+                                                color: gradientColors[0],
+                                                frequency:
+                                                    line['frequency'] ?? '',
+                                                firstBus:
+                                                    line['firstBus'] ?? '',
+                                                lastBus: line['lastBus'] ?? '',
+                                                stops:
+                                                    line['stops'] ?? const [],
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                        borderRadius: BorderRadius.circular(10),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 14, vertical: 8),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                                colors: gradientColors),
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: const Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                "Voir détails",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                              SizedBox(width: 4),
+                                              Icon(Icons.arrow_forward_rounded,
+                                                  size: 14,
+                                                  color: Colors.white),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time_outlined,
-                          size: 13, color: Color(0xFF6B7280)),
-                      const SizedBox(width: 4),
-                      Text(
-                        line.time,
-                        style: const TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const Spacer(),
-                      Icon(Icons.arrow_forward_ios_rounded,
-                          size: 12, color: line.color),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Voir détails',
-                        style: TextStyle(
-                          color: line.color,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
 
-// ── Bus Illustration SVG ───────────────────────────────────────────────────────
-
-class _BusIllustration extends StatelessWidget {
-  final _BusLine line;
-
-  const _BusIllustration({required this.line});
-
-  @override
-  Widget build(BuildContext context) {
-    final c = line.color;
-    final d = line.darkColor;
-
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [d, c],
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Route en pointillés
-          Positioned(
-            bottom: 28,
-            left: 0,
-            right: 0,
-            child: CustomPaint(
-              painter: _DottedLinePainter(color: c),
-              size: const Size(double.infinity, 2),
-            ),
-          ),
-
-          // Arrêts (cercles)
-          ...[0.15, 0.35, 0.55, 0.75].map(
-            (x) => Positioned(
-              bottom: 22,
-              left: MediaQuery.of(context).size.width * x - 16,
-              child: Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: c,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.5),
-                ),
-              ),
-            ),
-          ),
-
-          // Bus dessiné
-          Positioned(
-            right: 20,
-            top: 10,
-            child: CustomPaint(
-              painter: _BusPainter(
-                bodyColor: Colors.white,
-                windowColor: c,
-                wheelColor: d,
-              ),
-              size: const Size(140, 80),
-            ),
-          ),
-
-          // Badge ligne
-          Positioned(
-            top: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Ligne ${line.letter}',
-                style: TextStyle(
-                  color: c,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-
-          // Badge catégorie
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                line.category,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-          ),
-
-          // Badge prochain bus
-          Positioned(
-            bottom: 10,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.access_time_rounded,
-                      size: 12, color: Color(0xFF1D9E75)),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Prochain : ${line.nextBus}',
-                    style: const TextStyle(
-                      color: Color(0xFF1D9E75),
-                      fontWeight: FontWeight.w700,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Bus Painter ────────────────────────────────────────────────────────────────
-
-class _BusPainter extends CustomPainter {
-  final Color bodyColor;
-  final Color windowColor;
-  final Color wheelColor;
-
-  const _BusPainter({
-    required this.bodyColor,
-    required this.windowColor,
-    required this.wheelColor,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..isAntiAlias = true;
-
-    // Corps du bus
-    paint.color = bodyColor.withOpacity(0.9);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 10, size.width, size.height - 30),
-        const Radius.circular(8),
-      ),
-      paint,
-    );
-
-    // Fenêtres
-    paint.color = windowColor.withOpacity(0.8);
-    final windows = [
-      Rect.fromLTWH(8, 18, 22, 16),
-      Rect.fromLTWH(35, 18, 22, 16),
-      Rect.fromLTWH(62, 18, 22, 16),
-      Rect.fromLTWH(89, 18, 22, 16),
-      Rect.fromLTWH(116, 18, 18, 16),
-    ];
-    for (final w in windows) {
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(w, const Radius.circular(3)),
-        paint,
-      );
-    }
-
-    // Bande décorative
-    paint.color = windowColor.withOpacity(0.3);
-    canvas.drawRect(
-      Rect.fromLTWH(0, 38, size.width, 4),
-      paint,
-    );
-
-    // Porte
-    paint.color = windowColor.withOpacity(0.4);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width - 30, 38, 22, 22),
-        const Radius.circular(3),
-      ),
-      paint,
-    );
-
-    // Roues
-    paint.color = wheelColor;
-    canvas.drawCircle(Offset(22, size.height - 12), 12, paint);
-    canvas.drawCircle(Offset(size.width - 22, size.height - 12), 12, paint);
-
-    paint.color = bodyColor;
-    canvas.drawCircle(Offset(22, size.height - 12), 5, paint);
-    canvas.drawCircle(Offset(size.width - 22, size.height - 12), 5, paint);
-
-    // Phare avant
-    paint.color = Colors.yellow.withOpacity(0.8);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(size.width - 8, 20, 8, 10),
-        const Radius.circular(2),
-      ),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
-}
-
-// ── Dotted Line Painter ────────────────────────────────────────────────────────
-
-class _DottedLinePainter extends CustomPainter {
-  final Color color;
-  const _DottedLinePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color.withOpacity(0.5)
-      ..strokeWidth = 2;
-
-    double x = 0;
-    while (x < size.width) {
-      canvas.drawLine(Offset(x, 0), Offset(x + 8, 0), paint);
-      x += 16;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_) => false;
-}
-
-// ── Stat Card ──────────────────────────────────────────────────────────────────
-
-class _StatCard extends StatelessWidget {
-  final String value;
-  final String label;
-  final IconData icon;
-  final Color color;
-
-  const _StatCard({
-    required this.value,
-    required this.label,
-    required this.icon,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
+      // --- NAVBAR HAUT DE GAMME AVEC ICÔNES RAFFINÉES ---
+      bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFDCE8F8)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 20,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildBottomNavItem(0, Icons.home_rounded, "Accueil"),
+                _buildBottomNavItem(
+                    1, Icons.directions_bus_filled_rounded, "Bus"),
+                _buildBottomNavItem(2, Icons.qr_code_scanner_rounded, "QR"),
+                _buildBottomNavItem(
+                    3, Icons.credit_card_rounded, "Abonnements"),
+                _buildBottomNavItem(4, Icons.person_rounded, "Profil"),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeaderStat(String value, String label, IconData icon) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.white.withOpacity(0.2)),
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 22),
+            Icon(icon, color: Colors.white, size: 18),
             const SizedBox(height: 4),
             Text(
               value,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w700,
-                fontSize: 16,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
               ),
             ),
+            const SizedBox(height: 2),
             Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF6B7280),
-                fontSize: 10,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withOpacity(0.8),
               ),
             ),
           ],
@@ -784,145 +678,46 @@ class _StatCard extends StatelessWidget {
       ),
     );
   }
-}
 
-// ── Filter Chip ────────────────────────────────────────────────────────────────
+  Widget _buildBottomNavItem(int index, IconData icon, String label) {
+    final isSelected = _currentIndex == index;
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _FilterChip({
-    required this.label,
-    required this.active,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+    return InkWell(
+      onTap: () => _onNavTap(index),
+      borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeInOut,
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 12 : 8,
+          vertical: 8,
+        ),
         decoration: BoxDecoration(
-          color: active ? BusLinesScreen.blue : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: active ? BusLinesScreen.blue : const Color(0xFFDCE8F8),
-          ),
+          color:
+              isSelected ? _primaryBlue.withOpacity(0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? Colors.white : BusLinesScreen.muted,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? _primaryBlue : const Color(0xFF94A3B8),
+              size: 22,
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  color: _primaryBlue,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ],
         ),
-      ),
-    );
-  }
-}
-
-// ── Empty State ────────────────────────────────────────────────────────────────
-
-class _EmptyState extends StatelessWidget {
-  const _EmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFDCE8F8)),
-      ),
-      child: const Column(
-        children: [
-          Icon(Icons.search_off_rounded, size: 48, color: Color(0xFF6B7280)),
-          SizedBox(height: 12),
-          Text(
-            'Aucune ligne trouvée',
-            style: TextStyle(
-              color: Color(0xFF0a1628),
-              fontWeight: FontWeight.w700,
-              fontSize: 16,
-            ),
-          ),
-          SizedBox(height: 6),
-          Text(
-            'Essayez une autre recherche.',
-            style: TextStyle(color: Color(0xFF6B7280), fontSize: 13),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Bottom Nav ─────────────────────────────────────────────────────────────────
-
-class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  const _BottomNav({required this.currentIndex});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFDCE8F8), width: 0.5)),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: BusLinesScreen.blue,
-        unselectedItemColor: BusLinesScreen.muted,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        onTap: (index) {
-          if (index == currentIndex) return;
-          Widget page = const HomeScreen();
-          if (index == 1) page = const BusLinesScreen();
-          if (index == 2) page = const QrPaymentScreen();
-          if (index == 3) page = const SubscriptionsScreen();
-          if (index == 4) page = const ProfileScreen();
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => page,
-              transitionDuration: const Duration(milliseconds: 200),
-              transitionsBuilder: (_, anim, __, child) =>
-                  FadeTransition(opacity: anim, child: child),
-            ),
-          );
-        },
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
-              label: 'Accueil'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.directions_bus_outlined),
-              activeIcon: Icon(Icons.directions_bus_rounded),
-              label: 'Bus'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.qr_code_outlined),
-              activeIcon: Icon(Icons.qr_code_rounded),
-              label: 'QR'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.credit_card_rounded),
-              activeIcon: Icon(Icons.credit_card_rounded),
-              label: 'Abonnements'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'Profil'),
-        ],
       ),
     );
   }
