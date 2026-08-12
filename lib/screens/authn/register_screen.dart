@@ -129,7 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: const Column(
                     children: [
                       Text(
-                        'Create Account',
+                        'Creer un compte ',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -139,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Join Moovly mobility network',
+                        'Rejoindre Moovly pour une experience ',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.black38,
@@ -184,7 +184,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'Email',
+                                'E-mail',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
@@ -217,7 +217,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'Phone Number',
+                                'Numéro de téléphone',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
@@ -278,7 +278,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _nameController,
                             keyboardType: TextInputType.name,
                             decoration: const InputDecoration(
-                              hintText: 'Full Name',
+                              hintText: 'Nom complet',
                               hintStyle: TextStyle(
                                   color: Colors.black26, fontSize: 13),
                               border: InputBorder.none,
@@ -349,8 +349,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 : TextInputType.phone,
                             decoration: InputDecoration(
                               hintText: _isEmailSignup
-                                  ? 'Email Address'
-                                  : 'Phone Number',
+                                  ? 'Addresse e-mail'
+                                  : 'Numéro de téléphone',
                               hintStyle: const TextStyle(
                                   color: Colors.black26, fontSize: 13),
                               border: InputBorder.none,
@@ -413,7 +413,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   color: Colors.black26),
                             ),
                             decoration: const InputDecoration(
-                              hintText: 'Select your Wilaya',
+                              hintText: 'Sélectionnez votre Wilaya',
                               hintStyle: TextStyle(
                                   color: Colors.black26, fontSize: 13),
                               border: InputBorder.none,
@@ -484,7 +484,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
-                              hintText: 'Create Password',
+                              hintText: 'Créer un mot de passe',
                               hintStyle: const TextStyle(
                                   color: Colors.black26, fontSize: 13),
                               suffixIcon: Padding(
@@ -556,7 +556,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             controller: _confirmPasswordController,
                             obscureText: _obscureConfirmPassword,
                             decoration: InputDecoration(
-                              hintText: 'Confirm Password',
+                              hintText: 'Confirmer le mot de passe',
                               hintStyle: const TextStyle(
                                   color: Colors.black26, fontSize: 13),
                               suffixIcon: Padding(
@@ -618,7 +618,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: () =>
                           Navigator.pushReplacementNamed(context, '/home'),
                       child: const Text(
-                        'Sign up',
+                        'S\'inscrire',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -643,7 +643,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         child: Text(
-                          'Or sign up with',
+                          'ou continuer avec',
                           style: TextStyle(
                             color: Colors.black26,
                             fontSize: 11,
@@ -764,7 +764,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
-                        "Already have an account? ",
+                        " Avez-vous déjà un compte? ",
                         style: TextStyle(
                             color: Colors.black38,
                             fontSize: 13,
@@ -773,7 +773,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/login'),
                         child: const Text(
-                          "Sign in",
+                          "Se connecter",
                           style: TextStyle(
                             color: Color(0xFF1D4ED8), // Lien bleu royal
                             fontWeight: FontWeight.bold,

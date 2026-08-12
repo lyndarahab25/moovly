@@ -1,234 +1,1600 @@
 import 'package:flutter/material.dart';
-import '../authn/login_screen.dart';
-import 'settings_screen.dart';
-import 'personal_info_screen.dart';
-import 'payment_history_screen.dart';
-import '../home/home_screen.dart';
-import '../bus/bus_lines_screen.dart';
-import '../qr/qr_payment_screen.dart';
-import '../subscriptions/subscriptions_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+import '../authn/login_screen.dart';
+
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
-  static const Color primaryBlue = Color(0xFF0a1628);
-  static const Color accentBlue = Color(0xFF2196F3);
-  static const Color background = Color(0xFFF6F8FD);
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  // ─────────────────────────────────────────────────────────────
+  // DESIGN TOKENS — cohérents avec HomeScreen
+  // ─────────────────────────────────────────────────────────────
+
+  static const Color bgLight = Color(0xFFF8FAFC);
+  static const Color primaryBlue = Color(0xFF1953FF);
+  static const Color darkBlue = Color(0xFF111A3D);
+  static const Color textDark = Color(0xFF0F172A);
+  static const Color textMuted = Color(0xFF64748B);
+  static const Color borderColor = Color(0xFFE2E8F0);
+  static const Color lightBlue = Color(0xFFEAF0FF);
+  static const Color red = Color(0xFFFF3B3B);
+
+  // ─────────────────────────────────────────────────────────────
+  // USER DATA
+  // ─────────────────────────────────────────────────────────────
+
+  String _firstName = 'Lynda';
+  String _lastName = 'Rahab';
+  String _email = 'lynda.rahab@email.com';
+  String _phone = '+213 5 XX XX XX XX';
+
+  String _language = 'Français';
+  bool _darkMode = false;
+
+  // ─────────────────────────────────────────────────────────────
+  // BUILD
+  // ─────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: background,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // --- HEADER ---
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.only(top: 60, bottom: 30),
-              decoration: const BoxDecoration(
-                color: primaryBlue,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
-                ),
+      backgroundColor: bgLight,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(26, 18, 26, 30),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopHeader(),
+              const SizedBox(height: 26),
+              _buildProfileCard(),
+              const SizedBox(height: 36),
+              const SizedBox(height: 16),
+              _buildAccountItem(
+                icon: Icons.person_outline_rounded,
+                title: 'Informations personnelles',
+                subtitle: 'Nom, email et téléphone',
+                onTap: _showPersonalInfo,
               ),
-              child: Column(
-                children: [
-                  Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      const CircleAvatar(
-                        radius: 50,
-                        backgroundColor: Colors.white,
-                        backgroundImage: AssetImage('assets/images/me.jpg'),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.camera_alt,
-                            size: 16, color: primaryBlue),
-                      ),
-                    ],
+              const SizedBox(height: 12),
+              _buildAccountItem(
+                icon: Icons.credit_card_outlined,
+                title: 'Mes abonnements',
+                subtitle: 'Gérer votre abonnement Moovly',
+                onTap: _showSubscriptions,
+              ),
+              const SizedBox(height: 12),
+              _buildAccountItem(
+                icon: Icons.settings_outlined,
+                title: 'Paramètres',
+                subtitle: 'Langue, apparence et sécurité',
+                onTap: _showSettings,
+              ),
+              const SizedBox(height: 12),
+              _buildAccountItem(
+                icon: Icons.help_outline_rounded,
+                title: 'Aide & Support',
+                subtitle: 'Besoin d’aide avec Moovly ?',
+                onTap: _showSupport,
+              ),
+              const SizedBox(height: 36),
+              _buildLogoutButton(),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // HEADER
+  // ─────────────────────────────────────────────────────────────
+
+  Widget _buildTopHeader() {
+    return SizedBox(
+      height: 58,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // TITRE CENTRÉ
+          const Center(
+            child: Text(
+              'Profil',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.5,
+              ),
+            ),
+          ),
+
+          // BOUTON PARAMÈTRES À DROITE
+          Align(
+            alignment: Alignment.centerRight,
+            child: Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Color(0xFFE2E8F0),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
-                  const SizedBox(height: 15),
-                  const Text("Lynda Rahab",
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 5),
-                  const Text("lynda.rahab@email.com",
-                      style: TextStyle(color: Colors.white70, fontSize: 13)),
                 ],
               ),
+              child: IconButton(
+                onPressed: () {
+                  _showSettings();
+                },
+                icon: const Icon(
+                  Icons.settings_outlined,
+                  color: Color(0xFF0F172A),
+                  size: 21,
+                ),
+              ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // --- STATS ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+  // ─────────────────────────────────────────────────────────────
+  // PROFILE CARD
+  // ─────────────────────────────────────────────────────────────
+
+  Widget _buildProfileCard() {
+    final fullName = '$_firstName $_lastName';
+
+    return Container(
+      width: double.infinity,
+      height: 166,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF2D5BE3),
+            Color(0xFF111A3D),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: primaryBlue.withOpacity(0.20),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            // Décoration arrière
+            Positioned(
+              right: -45,
+              top: -45,
               child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 15),
+                width: 150,
+                height: 150,
                 decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _statCard("128", "TRAJETS", Icons.directions_bus),
-                    _statCard("4.8", "NOTE", Icons.star),
-                    _statCard("24h", "ACTIVITÉ", Icons.history),
-                  ],
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.06),
                 ),
               ),
             ),
 
-            // --- MENU ---
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  _menuItem(
-                      context,
-                      Icons.person_outline,
-                      "Informations personnelles",
-                      () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const PersonalInfoScreen()))),
-                  _menuItem(context, Icons.credit_card_outlined,
-                      "Mes abonnements", () {}),
-                  _menuItem(
-                      context,
-                      Icons.receipt_long_outlined,
-                      "Historique des paiements",
-                      () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const PaymentHistoryScreen()))),
-                  _menuItem(context, Icons.account_balance_wallet_outlined,
-                      "Méthodes de paiement", () {}),
-                  _menuItem(context, Icons.notifications_outlined,
-                      "Notifications", () {}),
-                  _menuItem(
-                      context,
-                      Icons.settings_outlined,
-                      "Paramètres",
-                      () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const SettingsScreen()))),
-                  _menuItem(
-                      context, Icons.help_outline, "Aide et Support", () {}),
-                ],
+            Positioned(
+              right: 35,
+              bottom: -60,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.035),
+                ),
               ),
             ),
 
-            const SizedBox(height: 20),
-            TextButton.icon(
-              onPressed: () => Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false),
-              icon: const Icon(Icons.logout, color: Colors.red),
-              label: const Text("Se déconnecter",
-                  style: TextStyle(
-                      color: Colors.red, fontWeight: FontWeight.bold)),
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 20,
+              ),
+              child: Row(
+                children: [
+                  // Avatar sans photo
+                  Container(
+                    width: 84,
+                    height: 84,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: primaryBlue,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.38),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.12),
+                          blurRadius: 10,
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        _firstName.isNotEmpty
+                            ? _firstName[0].toUpperCase()
+                            : 'L',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 39,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 18),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+
+                        const SizedBox(height: 5),
+
+                        Text(
+                          _email,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.72),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+
+                        const SizedBox(height: 13),
+
+                        // Bouton modifier
+                        SizedBox(
+                          height: 36,
+                          child: OutlinedButton.icon(
+                            onPressed: _showPersonalInfo,
+                            icon: const Icon(
+                              Icons.edit_rounded,
+                              size: 15,
+                            ),
+                            label: const Text(
+                              'Modifier',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              backgroundColor: Colors.white.withOpacity(0.12),
+                              side: BorderSide(
+                                color: Colors.white.withOpacity(0.25),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  // Icône profil
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.10),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.12),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.person_outline_rounded,
+                      color: Colors.white70,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 40),
           ],
         ),
       ),
-      bottomNavigationBar: const _BottomNav(currentIndex: 4),
     );
   }
 
-  Widget _statCard(String val, String label, IconData icon) {
-    return Column(
-      children: [
-        Icon(icon, color: accentBlue, size: 28),
-        const SizedBox(height: 8),
-        Text(val,
-            style: const TextStyle(
-                color: primaryBlue, fontSize: 20, fontWeight: FontWeight.bold)),
-        Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-      ],
-    );
-  }
+  // ─────────────────────────────────────────────────────────────
+  // ACCOUNT ITEM
+  // ─────────────────────────────────────────────────────────────
 
-  Widget _menuItem(
-      BuildContext context, IconData icon, String title, VoidCallback onTap) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.black.withOpacity(0.03))),
-      child: ListTile(
-        leading: Icon(icon, color: primaryBlue),
-        title: Text(title,
-            style: const TextStyle(
-                color: primaryBlue, fontWeight: FontWeight.w600, fontSize: 14)),
-        trailing:
-            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+  Widget _buildAccountItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: double.infinity,
+          constraints: const BoxConstraints(minHeight: 92),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 17,
+            vertical: 14,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.025),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: lightBlue,
+                  borderRadius: BorderRadius.circular(17),
+                ),
+                child: Icon(
+                  icon,
+                  color: primaryBlue,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: textMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF94A3B8),
+                size: 25,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
-}
 
-class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  const _BottomNav({required this.currentIndex});
+  // ─────────────────────────────────────────────────────────────
+  // LOGOUT
+  // ─────────────────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      currentIndex: currentIndex,
-      type: BottomNavigationBarType.fixed,
-      selectedItemColor: ProfileScreen.accentBlue,
-      onTap: (index) {
-        if (index == currentIndex) return;
-        Widget page;
-        switch (index) {
-          case 0:
-            page = const HomeScreen();
-            break;
-          case 1:
-            page = const BusLinesScreen();
-            break;
-          case 2:
-            page = const QrPaymentScreen();
-            break;
-          case 3:
-            page = const SubscriptionsScreen();
-            break;
-          case 4:
-            page = const ProfileScreen();
-            break;
-          default:
-            page = const HomeScreen();
-        }
-        Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-                pageBuilder: (_, __, ___) => page,
-                transitionDuration: Duration.zero));
-      },
-      items: const [
-        BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined), label: "Accueil"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.directions_bus_outlined), label: "Bus"),
-        BottomNavigationBarItem(icon: Icon(Icons.qr_code_scanner), label: "QR"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.credit_card_outlined), label: "Abonnement"),
-        BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline), label: "Profil"),
-      ],
+  Widget _buildLogoutButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: OutlinedButton.icon(
+        onPressed: _logout,
+        icon: const Icon(
+          Icons.logout_rounded,
+          size: 20,
+        ),
+        label: const Text(
+          'Se déconnecter',
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: red,
+          backgroundColor: Colors.white,
+          side: BorderSide(
+            color: red.withOpacity(0.30),
+            width: 1.2,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      ),
     );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // INFORMATIONS PERSONNELLES
+  // ─────────────────────────────────────────────────────────────
+
+  void _showPersonalInfo() {
+    final firstNameController = TextEditingController(text: _firstName);
+    final lastNameController = TextEditingController(text: _lastName);
+    final emailController = TextEditingController(text: _email);
+    final phoneController = TextEditingController(text: _phone);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 10,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: bgLight,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 42,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: borderColor,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    const Text(
+                      'Informations personnelles',
+                      style: TextStyle(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w800,
+                        color: textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      'Modifiez vos informations de compte.',
+                      style: TextStyle(
+                        color: textMuted,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    _buildTextField(
+                      controller: firstNameController,
+                      label: 'Prénom',
+                      icon: Icons.person_outline_rounded,
+                    ),
+                    const SizedBox(height: 13),
+                    _buildTextField(
+                      controller: lastNameController,
+                      label: 'Nom',
+                      icon: Icons.badge_outlined,
+                    ),
+                    const SizedBox(height: 13),
+                    _buildTextField(
+                      controller: emailController,
+                      label: 'Email',
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                    ),
+                    const SizedBox(height: 13),
+                    _buildTextField(
+                      controller: phoneController,
+                      label: 'Téléphone',
+                      icon: Icons.phone_outlined,
+                      keyboardType: TextInputType.phone,
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (firstNameController.text.trim().isEmpty ||
+                              lastNameController.text.trim().isEmpty ||
+                              emailController.text.trim().isEmpty) {
+                            return;
+                          }
+
+                          setState(() {
+                            _firstName = firstNameController.text.trim();
+                            _lastName = lastNameController.text.trim();
+                            _email = emailController.text.trim();
+                            _phone = phoneController.text.trim();
+                          });
+
+                          Navigator.pop(sheetContext);
+
+                          _showMessage(
+                            'Informations mises à jour',
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryBlue,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        child: const Text(
+                          'Enregistrer les modifications',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(sheetContext);
+                          _showChangePassword();
+                        },
+                        icon: const Icon(
+                          Icons.lock_outline_rounded,
+                          size: 19,
+                        ),
+                        label: const Text(
+                          'Modifier le mot de passe',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: textDark,
+                          side: const BorderSide(
+                            color: borderColor,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // TEXT FIELD
+  // ─────────────────────────────────────────────────────────────
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType? keyboardType,
+    bool obscureText = false,
+  }) {
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      style: const TextStyle(
+        color: textDark,
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: textMuted,
+          fontSize: 13,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: primaryBlue,
+          size: 20,
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 15,
+          vertical: 15,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: borderColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: borderColor),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(
+            color: primaryBlue,
+            width: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // CHANGE PASSWORD
+  // ─────────────────────────────────────────────────────────────
+
+  void _showChangePassword() {
+    final oldController = TextEditingController();
+    final newController = TextEditingController();
+    final confirmController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: EdgeInsets.only(
+            left: 24,
+            right: 24,
+            top: 10,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          decoration: const BoxDecoration(
+            color: bgLight,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: borderColor,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 22),
+                const Text(
+                  'Sécurité',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                    color: textDark,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                const Text(
+                  'Modifiez votre mot de passe.',
+                  style: TextStyle(
+                    color: textMuted,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 22),
+                _buildTextField(
+                  controller: oldController,
+                  label: 'Mot de passe actuel',
+                  icon: Icons.lock_outline_rounded,
+                  obscureText: true,
+                ),
+                const SizedBox(height: 13),
+                _buildTextField(
+                  controller: newController,
+                  label: 'Nouveau mot de passe',
+                  icon: Icons.lock_reset_rounded,
+                  obscureText: true,
+                ),
+                const SizedBox(height: 13),
+                _buildTextField(
+                  controller: confirmController,
+                  label: 'Confirmer le mot de passe',
+                  icon: Icons.check_circle_outline_rounded,
+                  obscureText: true,
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (newController.text.isEmpty ||
+                          newController.text != confirmController.text) {
+                        _showMessage(
+                          'Les mots de passe ne correspondent pas.',
+                        );
+                        return;
+                      }
+
+                      Navigator.pop(sheetContext);
+
+                      _showMessage(
+                        'Mot de passe modifié avec succès',
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryBlue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                    child: const Text(
+                      'Modifier le mot de passe',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // ABONNEMENTS
+  // ─────────────────────────────────────────────────────────────
+
+  void _showSubscriptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 10, 24, 28),
+          decoration: const BoxDecoration(
+            color: bgLight,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              const Text(
+                'Mes abonnements',
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  color: textDark,
+                ),
+              ),
+              const SizedBox(height: 16),
+              _subscriptionOption(
+                icon: Icons.credit_card_rounded,
+                title: 'Premium',
+                subtitle: 'Abonnement standard Moovly',
+                color: primaryBlue,
+                active: true,
+              ),
+              const SizedBox(height: 12),
+              _subscriptionOption(
+                icon: Icons.auto_awesome_rounded,
+                title: 'Gold',
+                subtitle: 'Moovly AI + suivi en temps réel',
+                color: const Color(0xFFD4AF37),
+                active: false,
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'La gestion réelle des abonnements pourra être connectée à Firebase ultérieurement.',
+                style: TextStyle(
+                  color: textMuted,
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _subscriptionOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+    required bool active,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(
+          color: active ? color.withOpacity(0.35) : borderColor,
+          width: active ? 1.3 : 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: textMuted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (active)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 9,
+                vertical: 5,
+              ),
+              decoration: BoxDecoration(
+                color: primaryBlue.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Text(
+                'Actif',
+                style: TextStyle(
+                  color: primaryBlue,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // PARAMÈTRES
+  // ─────────────────────────────────────────────────────────────
+
+  void _showSettings() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(24, 10, 24, 28),
+              decoration: const BoxDecoration(
+                color: bgLight,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: borderColor,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  const Text(
+                    'Paramètres',
+                    style: TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w800,
+                      color: textDark,
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // Langue
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(17),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: lightBlue,
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Icon(
+                          Icons.language_rounded,
+                          color: primaryBlue,
+                        ),
+                      ),
+                      title: const Text(
+                        'Langue',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: textDark,
+                        ),
+                      ),
+                      subtitle: Text(
+                        _language,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: textMuted,
+                        ),
+                      ),
+                      trailing: const Icon(
+                        Icons.chevron_right_rounded,
+                        color: textMuted,
+                      ),
+                      onTap: () {
+                        _showLanguagePicker(
+                          sheetContext,
+                          setSheetState,
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Mode sombre
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(17),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: lightBlue,
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: Icon(
+                          _darkMode
+                              ? Icons.dark_mode_rounded
+                              : Icons.light_mode_rounded,
+                          color: primaryBlue,
+                        ),
+                      ),
+                      title: const Text(
+                        'Mode sombre',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: textDark,
+                        ),
+                      ),
+                      subtitle: Text(
+                        _darkMode ? 'Activé' : 'Désactivé',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: textMuted,
+                        ),
+                      ),
+                      value: _darkMode,
+                      activeColor: primaryBlue,
+                      onChanged: (value) {
+                        setState(() {
+                          _darkMode = value;
+                        });
+
+                        setSheetState(() {});
+
+                        _showMessage(
+                          value ? 'Mode sombre activé' : 'Mode clair activé',
+                        );
+                      },
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Sécurité
+                  _settingsSimpleItem(
+                    icon: Icons.lock_outline_rounded,
+                    title: 'Sécurité',
+                    subtitle: 'Mot de passe et protection',
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _showChangePassword();
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _settingsSimpleItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(17),
+        child: Container(
+          padding: const EdgeInsets.all(15),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: borderColor),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: lightBlue,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(
+                  icon,
+                  color: primaryBlue,
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: textDark,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: textMuted,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // LANGUAGE PICKER
+  // ─────────────────────────────────────────────────────────────
+
+  void _showLanguagePicker(
+    BuildContext parentContext,
+    StateSetter setSheetState,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (languageContext) {
+        final languages = [
+          'Français',
+          'العربية',
+          'English',
+        ];
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 10, 24, 28),
+          decoration: const BoxDecoration(
+            color: bgLight,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Choisir la langue',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: textDark,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ...languages.map(
+                (language) {
+                  final selected = _language == language;
+
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                    ),
+                    leading: Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? primaryBlue.withOpacity(0.10)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.language_rounded,
+                        color: selected ? primaryBlue : textMuted,
+                      ),
+                    ),
+                    title: Text(
+                      language,
+                      style: TextStyle(
+                        color: textDark,
+                        fontSize: 14,
+                        fontWeight:
+                            selected ? FontWeight.w800 : FontWeight.w600,
+                      ),
+                    ),
+                    trailing: selected
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: primaryBlue,
+                          )
+                        : null,
+                    onTap: () {
+                      setState(() {
+                        _language = language;
+                      });
+
+                      setSheetState(() {});
+
+                      Navigator.pop(languageContext);
+
+                      _showMessage(
+                        'Langue sélectionnée : $language',
+                      );
+                    },
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SUPPORT
+  // ─────────────────────────────────────────────────────────────
+
+  void _showSupport() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 10, 24, 30),
+          decoration: const BoxDecoration(
+            color: bgLight,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(28),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 22),
+              const Text(
+                'Aide & Support',
+                style: TextStyle(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  color: textDark,
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Comment pouvons-nous vous aider ?',
+                style: TextStyle(
+                  color: textMuted,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 18),
+              _supportItem(
+                icon: Icons.help_outline_rounded,
+                title: 'Questions fréquentes',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showMessage(
+                    'FAQ Moovly bientôt disponible',
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              _supportItem(
+                icon: Icons.chat_bubble_outline_rounded,
+                title: 'Contacter le support',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showMessage(
+                    'Support Moovly bientôt disponible',
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              _supportItem(
+                icon: Icons.info_outline_rounded,
+                title: 'À propos de Moovly',
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _showAbout();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _supportItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: borderColor),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                color: primaryBlue,
+                size: 22,
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: textDark,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: textMuted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // ABOUT
+  // ─────────────────────────────────────────────────────────────
+
+  void _showAbout() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: const Text(
+            'Moovly',
+            style: TextStyle(
+              color: textDark,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: const Text(
+            'Plus vite, plus proche, plus malin.\n\n'
+            'Moovly est une solution intelligente pour '
+            'simplifier la mobilité urbaine à Bouira.',
+            style: TextStyle(
+              color: textMuted,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                'Fermer',
+                style: TextStyle(
+                  color: primaryBlue,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // LOGOUT
+  // ─────────────────────────────────────────────────────────────
+
+  void _logout() {
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: const Text(
+            'Se déconnecter ?',
+            style: TextStyle(
+              color: textDark,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          content: const Text(
+            'Voulez-vous vraiment vous déconnecter de votre compte Moovly ?',
+            style: TextStyle(
+              color: textMuted,
+              height: 1.4,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text(
+                'Annuler',
+                style: TextStyle(
+                  color: textMuted,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const LoginScreen(),
+                  ),
+                  (route) => false,
+                );
+              },
+              child: const Text(
+                'Se déconnecter',
+                style: TextStyle(
+                  color: red,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────
+  // SNACKBAR
+  // ─────────────────────────────────────────────────────────────
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          backgroundColor: textDark,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(13),
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
   }
 }

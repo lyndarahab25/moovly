@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../bus/bus_lines_screen.dart';
-import '../home/home_screen.dart';
-import '../profile/profile_screen.dart';
-import '../qr/qr_payment_screen.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -13,83 +9,89 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  static const blue = Color(0xFF0a1628);
-  static const sky = Color(0xFF2196F3);
-  static const bg = Color(0xFFF0F6FF);
-  static const muted = Color(0xFF6B7280);
-  static const green = Color(0xFF1D9E75);
-  static const orange = Color(0xFFFF8A00);
-  static const purple = Color(0xFF6D4DE6);
-  static const red = Color(0xFFE24B4A);
+  // ============================================================
+  // MOOVLY DESIGN TOKENS
+  // ============================================================
 
-  String _selectedTab = 'Toutes';
+  static const Color bg = Color(0xFFF8FAFC);
+  static const Color primaryBlue = Color(0xFF1953FF);
+  static const Color darkText = Color(0xFF0F172A);
+  static const Color mutedText = Color(0xFF64748B);
+  static const Color borderColor = Color(0xFFE2E8F0);
 
-  final List<_Notif> _notifications = [
-    _Notif(
+  static const Color red = Color(0xFFE24B4A);
+  static const Color green = Color(0xFF16A34A);
+  static const Color orange = Color(0xFFFF8A00);
+  static const Color purple = Color(0xFF6D4DE6);
+
+  String selectedTab = 'Toutes';
+
+  final List<MoovlyNotification> notifications = [
+    MoovlyNotification(
       id: '1',
       icon: Icons.warning_rounded,
       title: 'Retard sur la ligne A',
-      subtitle: 'Retard de 10 min sur la ligne A à 08:20',
+      subtitle: 'Retard de 10 min sur la ligne A à 08:20.',
       time: 'Maintenant',
       color: red,
       category: 'Alertes',
       unread: true,
     ),
-    _Notif(
+    MoovlyNotification(
       id: '2',
       icon: Icons.directions_bus_rounded,
-      title: 'Nouveau : Plus de bus',
-      subtitle: 'Plus de bus disponibles sur la ligne 12 à 07:30',
+      title: 'Plus de bus disponibles',
+      subtitle: 'Plus de bus sont disponibles sur la ligne 12.',
       time: 'Il y a 1h',
-      color: sky,
+      color: primaryBlue,
       category: 'Infos',
       unread: true,
     ),
-    _Notif(
+    MoovlyNotification(
       id: '3',
       icon: Icons.check_circle_rounded,
       title: 'Paiement réussi',
-      subtitle: 'Votre paiement de 50 DA a été effectué avec succès',
+      subtitle: 'Votre paiement de 50 DA a été effectué avec succès.',
       time: 'Il y a 2h',
       color: green,
       category: 'Infos',
       unread: false,
     ),
-    _Notif(
+    MoovlyNotification(
       id: '4',
       icon: Icons.build_rounded,
       title: 'Maintenance prévue',
-      subtitle: 'Maintenance le 15/07 de 00:00 à 04:00 sur la ligne C',
+      subtitle: 'Maintenance prévue sur la ligne C de 00:00 à 04:00.',
       time: 'Hier',
       color: purple,
       category: 'Alertes',
       unread: false,
     ),
-    _Notif(
+    MoovlyNotification(
       id: '5',
       icon: Icons.local_offer_rounded,
       title: 'Offre spéciale Premium',
-      subtitle: 'Profitez d\'une réduction sur votre prochain abonnement',
+      subtitle: 'Profitez d’une réduction sur votre prochain abonnement.',
       time: 'Hier',
       color: orange,
       category: 'Offres',
       unread: false,
     ),
-    _Notif(
+    MoovlyNotification(
       id: '6',
       icon: Icons.directions_bus_rounded,
       title: 'Bus en approche',
-      subtitle: 'Votre bus ligne B arrive dans 3 min à l\'arrêt Université',
+      subtitle: 'Votre bus ligne B arrive dans 3 min à l’arrêt Université.',
       time: 'Il y a 3h',
-      color: sky,
+      color: primaryBlue,
       category: 'Alertes',
       unread: false,
     ),
-    _Notif(
+    MoovlyNotification(
       id: '7',
       icon: Icons.star_rounded,
       title: 'Abonnement renouvelé',
-      subtitle: 'Votre abonnement Premium a été renouvelé jusqu\'au 31/08',
+      subtitle: 'Votre abonnement Premium est valable jusqu’au 31/08.',
       time: 'Il y a 2j',
       color: orange,
       category: 'Offres',
@@ -97,291 +99,513 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     ),
   ];
 
-  List<_Notif> get _filtered {
-    if (_selectedTab == 'Toutes') return _notifications;
-    return _notifications.where((n) => n.category == _selectedTab).toList();
+  // ============================================================
+  // FILTER
+  // ============================================================
+
+  List<MoovlyNotification> get filteredNotifications {
+    if (selectedTab == 'Toutes') {
+      return notifications;
+    }
+
+    return notifications
+        .where((notification) => notification.category == selectedTab)
+        .toList();
   }
 
-  int get _unreadCount => _notifications.where((n) => n.unread).length;
+  int get unreadCount {
+    return notifications.where((notification) => notification.unread).length;
+  }
 
-  void _markAllRead() {
+  // ============================================================
+  // ACTIONS
+  // ============================================================
+
+  void markAllRead() {
     HapticFeedback.lightImpact();
+
     setState(() {
-      for (final n in _notifications) {
-        n.unread = false;
+      for (final notification in notifications) {
+        notification.unread = false;
       }
     });
+
+    _showMessage(
+      'Toutes les notifications ont été marquées comme lues.',
+      green,
+      Icons.done_all_rounded,
+    );
+  }
+
+  void markAsRead(String id) {
+    setState(() {
+      final notification =
+          notifications.firstWhere((notification) => notification.id == id);
+
+      notification.unread = false;
+    });
+  }
+
+  void deleteNotification(String id) {
+    HapticFeedback.mediumImpact();
+
+    setState(() {
+      notifications.removeWhere(
+        (notification) => notification.id == id,
+      );
+    });
+  }
+
+  void _showMessage(
+    String message,
+    Color color,
+    IconData icon,
+  ) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: color,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
+        content: Row(
           children: [
-            Icon(Icons.done_all_rounded, color: Colors.white, size: 18),
-            SizedBox(width: 8),
-            Text('Toutes les notifications marquées comme lues'),
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 19,
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
-        backgroundColor: green,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
-  void _deleteNotif(String id) {
-    HapticFeedback.mediumImpact();
-    setState(() {
-      _notifications.removeWhere((n) => n.id == id);
-    });
-  }
+  // ============================================================
+  // NOTIFICATION DETAIL
+  // ============================================================
 
-  void _markRead(String id) {
-    setState(() {
-      final n = _notifications.firstWhere((n) => n.id == id);
-      n.unread = false;
-    });
-  }
+  void showNotificationDetail(
+    BuildContext context,
+    MoovlyNotification notification,
+  ) {
+    markAsRead(notification.id);
 
-  void _showNotifDetail(BuildContext context, _Notif notif) {
-    _markRead(notif.id);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Color(0xFFF0F6FF),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0xFFDCE8F8),
-                borderRadius: BorderRadius.circular(2),
-              ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.fromLTRB(22, 12, 22, 28),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(30),
             ),
-            const SizedBox(height: 20),
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: notif.color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(notif.icon, color: notif.color, size: 30),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              notif.title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF0a1628),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              notif.subtitle,
-              style: const TextStyle(
-                color: muted,
-                fontSize: 13,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFDCE8F8)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.access_time_rounded, size: 13, color: muted),
-                  const SizedBox(width: 4),
-                  Text(
-                    notif.time,
-                    style: const TextStyle(color: muted, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      _deleteNotif(notif.id);
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.delete_outline_rounded, size: 18),
-                    label: const Text('Supprimer'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: red,
-                      side: BorderSide(color: red.withOpacity(0.3)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
+                // Handle
+                Container(
+                  width: 42,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: borderColor,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.check_rounded, size: 18),
-                    label: const Text('OK'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: sky,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                    ),
+
+                const SizedBox(height: 24),
+
+                // Icon
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: notification.color.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(18),
                   ),
+                  child: Icon(
+                    notification.icon,
+                    color: notification.color,
+                    size: 30,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Text(
+                  notification.title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: darkText,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+
+                const SizedBox(height: 9),
+
+                Text(
+                  notification.subtitle,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: mutedText,
+                    fontSize: 13,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                // Time + category
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _InfoPill(
+                      icon: Icons.access_time_rounded,
+                      text: notification.time,
+                    ),
+                    const SizedBox(width: 8),
+                    _InfoPill(
+                      icon: Icons.label_outline_rounded,
+                      text: notification.category,
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 24),
+
+                // Actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          deleteNotification(notification.id);
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(
+                          Icons.delete_outline_rounded,
+                          size: 18,
+                        ),
+                        label: const Text('Supprimer'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: red,
+                          side: BorderSide(
+                            color: red.withOpacity(0.25),
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 13,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.check_rounded,
+                          size: 18,
+                        ),
+                        label: const Text('Fermer'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryBlue,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 13,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+          ),
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // BUILD
+  // ============================================================
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = filteredNotifications;
+
+    return Scaffold(
+      backgroundColor: bg,
+
+      // IMPORTANT :
+      // Aucun bottomNavigationBar ici.
+      // Le navbar appartient au HomeScreen.
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            _buildTabs(),
+            Expanded(
+              child: filtered.isEmpty
+                  ? const _EmptyNotifications()
+                  : ListView.builder(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(
+                        16,
+                        16,
+                        16,
+                        30,
+                      ),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        final notification = filtered[index];
+
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Dismissible(
+                            key: ValueKey(notification.id),
+                            direction: DismissDirection.endToStart,
+                            onDismissed: (_) {
+                              deleteNotification(notification.id);
+                            },
+                            background: Container(
+                              alignment: Alignment.centerRight,
+                              padding: const EdgeInsets.only(right: 22),
+                              decoration: BoxDecoration(
+                                color: red,
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              child: const Icon(
+                                Icons.delete_rounded,
+                                color: Colors.white,
+                                size: 22,
+                              ),
+                            ),
+                            child: _NotificationCard(
+                              notification: notification,
+                              onTap: () {
+                                showNotificationDetail(
+                                  context,
+                                  notification,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final filtered = _filtered;
+  // ============================================================
+  // HEADER
+  // ============================================================
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: CustomScrollView(
-        slivers: [
-          // ── AppBar simple ──────────────────────────────────────────
-          SliverAppBar(
-            pinned: true,
-            backgroundColor: blue,
-            foregroundColor: Colors.white,
-            title: Row(
-              children: [
-                const Text(
-                  'Notifications',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (_unreadCount > 0)
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: red,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '$_unreadCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-              ],
+  Widget _buildHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+      child: Row(
+        children: [
+          // Back
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: borderColor,
+              ),
             ),
-            actions: [
-              if (_unreadCount > 0)
-                TextButton.icon(
-                  onPressed: _markAllRead,
-                  icon: const Icon(Icons.done_all_rounded,
-                      color: Colors.white70, size: 18),
-                  label: const Text(
-                    'Tout lire',
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(50),
-              child: Container(
-                color: blue,
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                child: Row(
-                  children: ['Toutes', 'Alertes', 'Infos', 'Offres']
-                      .map((tab) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: _TabBtn(
-                              label: tab,
-                              active: _selectedTab == tab,
-                              onTap: () => setState(() => _selectedTab = tab),
-                            ),
-                          ))
-                      .toList(),
-                ),
+            child: IconButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              padding: EdgeInsets.zero,
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: darkText,
+                size: 21,
               ),
             ),
           ),
 
-          // ── Liste ──────────────────────────────────────────────────
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
-            sliver: filtered.isEmpty
-                ? SliverToBoxAdapter(child: _EmptyState())
-                : SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (_, i) {
-                        final notif = filtered[i];
-                        return Dismissible(
-                          key: Key(notif.id),
-                          direction: DismissDirection.endToStart,
-                          onDismissed: (_) => _deleteNotif(notif.id),
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20),
-                            margin: const EdgeInsets.only(bottom: 10),
-                            decoration: BoxDecoration(
-                              color: red,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Icon(Icons.delete_rounded,
-                                color: Colors.white),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _NotifCard(
-                              notif: notif,
-                              onTap: () => _showNotifDetail(context, notif),
-                            ),
-                          ),
-                        );
-                      },
-                      childCount: filtered.length,
-                    ),
+          const SizedBox(width: 14),
+
+          // Title
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Notifications',
+                  style: TextStyle(
+                    color: darkText,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
                   ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  unreadCount == 0
+                      ? 'Vous êtes à jour'
+                      : '$unreadCount notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}',
+                  style: const TextStyle(
+                    color: mutedText,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
+
+          // Tout lire
+          if (unreadCount > 0)
+            GestureDetector(
+              onTap: markAllRead,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 11,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: primaryBlue.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.done_all_rounded,
+                      color: primaryBlue,
+                      size: 16,
+                    ),
+                    SizedBox(width: 5),
+                    Text(
+                      'Tout lire',
+                      style: TextStyle(
+                        color: primaryBlue,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
-      bottomNavigationBar: const _BottomNav(currentIndex: 3),
+    );
+  }
+
+  // ============================================================
+  // TABS
+  // ============================================================
+
+  Widget _buildTabs() {
+    const tabs = [
+      'Toutes',
+      'Alertes',
+      'Infos',
+      'Offres',
+    ];
+
+    return SizedBox(
+      height: 52,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: tabs.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final tab = tabs[index];
+          final active = selectedTab == tab;
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                selectedTab = tab;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              alignment: Alignment.center,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+              ),
+              decoration: BoxDecoration(
+                color: active ? primaryBlue : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: active ? primaryBlue : borderColor,
+                ),
+                boxShadow: active
+                    ? [
+                        BoxShadow(
+                          color: primaryBlue.withOpacity(0.18),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Text(
+                tab,
+                style: TextStyle(
+                  color: active ? Colors.white : mutedText,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 }
 
-// ── Models ─────────────────────────────────────────────────────────────────────
+// ============================================================
+// MODEL
+// ============================================================
 
-class _Notif {
+class MoovlyNotification {
   final String id;
   final IconData icon;
   final String title;
@@ -389,9 +613,10 @@ class _Notif {
   final String time;
   final Color color;
   final String category;
+
   bool unread;
 
-  _Notif({
+  MoovlyNotification({
     required this.id,
     required this.icon,
     required this.title,
@@ -403,173 +628,161 @@ class _Notif {
   });
 }
 
-// ── Tab Button ─────────────────────────────────────────────────────────────────
+// ============================================================
+// NOTIFICATION CARD
+// ============================================================
 
-class _TabBtn extends StatelessWidget {
-  final String label;
-  final bool active;
+class _NotificationCard extends StatelessWidget {
+  final MoovlyNotification notification;
   final VoidCallback onTap;
 
-  const _TabBtn({
-    required this.label,
-    required this.active,
+  const _NotificationCard({
+    required this.notification,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final bool unread = notification.unread;
+
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(15),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: active ? const Color(0xFF0a1628) : Colors.white,
-            fontWeight: FontWeight.w600,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Notification Card ──────────────────────────────────────────────────────────
-
-class _NotifCard extends StatelessWidget {
-  final _Notif notif;
-  final VoidCallback onTap;
-
-  const _NotifCard({required this.notif, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: notif.unread ? Colors.white : Colors.white.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: notif.unread
-                ? notif.color.withOpacity(0.2)
-                : const Color(0xFFDCE8F8),
-            width: notif.unread ? 1.5 : 1,
+            color: unread
+                ? notification.color.withOpacity(0.22)
+                : _NotificationsScreenState.borderColor,
+            width: unread ? 1.3 : 1,
           ),
-          boxShadow: notif.unread
-              ? [
-                  BoxShadow(
-                    color: notif.color.withOpacity(0.08),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              : [],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(
+                unread ? 0.045 : 0.025,
+              ),
+              blurRadius: unread ? 14 : 9,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Icon
             Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
-                  width: 46,
-                  height: 46,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
-                    color: notif.color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
+                    color: notification.color.withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(15),
                   ),
-                  child: Icon(notif.icon, color: notif.color, size: 22),
+                  child: Icon(
+                    notification.icon,
+                    color: notification.color,
+                    size: 22,
+                  ),
                 ),
-                if (notif.unread)
+                if (unread)
                   Positioned(
                     right: -2,
                     top: -2,
                     child: Container(
-                      width: 10,
-                      height: 10,
+                      width: 11,
+                      height: 11,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE24B4A),
+                        color: _NotificationsScreenState.red,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
+                        border: Border.all(
+                          color: Colors.white,
+                          width: 2,
+                        ),
                       ),
                     ),
                   ),
               ],
             ),
+
             const SizedBox(width: 12),
+
+            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: Text(
-                          notif.title,
+                          notification.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
-                            fontWeight: notif.unread
-                                ? FontWeight.w700
-                                : FontWeight.w600,
-                            fontSize: 13,
-                            color: const Color(0xFF0a1628),
+                            color: _NotificationsScreenState.darkText,
+                            fontSize: 13.5,
+                            fontWeight:
+                                unread ? FontWeight.w800 : FontWeight.w700,
                           ),
                         ),
                       ),
+                      const SizedBox(width: 8),
                       Text(
-                        notif.time,
+                        notification.time,
                         style: const TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 11,
+                          color: _NotificationsScreenState.mutedText,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Text(
-                    notif.subtitle,
+                    notification.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: notif.unread
-                          ? const Color(0xFF0a1628)
-                          : const Color(0xFF6B7280),
-                      fontSize: 12,
-                      height: 1.4,
+                      color: unread
+                          ? _NotificationsScreenState.darkText
+                          : _NotificationsScreenState.mutedText,
+                      fontSize: 11.5,
+                      height: 1.45,
+                      fontWeight: unread ? FontWeight.w500 : FontWeight.w400,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 9),
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: notif.color.withOpacity(0.1),
+                          color: notification.color.withOpacity(0.09),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          notif.category,
+                          notification.category,
                           style: TextStyle(
-                            color: notif.color,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                            color: notification.color,
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
                       const Spacer(),
-                      const Text(
-                        '← Glisser pour supprimer',
-                        style: TextStyle(
-                          color: Color(0xFF6B7280),
-                          fontSize: 10,
-                        ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: _NotificationsScreenState.mutedText,
+                        size: 18,
                       ),
                     ],
                   ),
@@ -583,32 +796,48 @@ class _NotifCard extends StatelessWidget {
   }
 }
 
-// ── Empty State ────────────────────────────────────────────────────────────────
+// ============================================================
+// INFO PILL
+// ============================================================
 
-class _EmptyState extends StatelessWidget {
+class _InfoPill extends StatelessWidget {
+  final IconData icon;
+  final String text;
+
+  const _InfoPill({
+    required this.icon,
+    required this.text,
+  });
+
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(top: 60),
-      child: const Column(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: _NotificationsScreenState.bg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: _NotificationsScreenState.borderColor,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.notifications_off_outlined,
-              size: 64, color: Color(0xFF6B7280)),
-          SizedBox(height: 16),
-          Text(
-            'Aucune notification',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF0a1628),
-            ),
+          Icon(
+            icon,
+            size: 13,
+            color: _NotificationsScreenState.mutedText,
           ),
-          SizedBox(height: 6),
+          const SizedBox(width: 5),
           Text(
-            'Vous êtes à jour !',
-            style: TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 13,
+            text,
+            style: const TextStyle(
+              color: _NotificationsScreenState.mutedText,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -617,66 +846,55 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ── Bottom Nav ─────────────────────────────────────────────────────────────────
+// ============================================================
+// EMPTY STATE
+// ============================================================
 
-class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  const _BottomNav({required this.currentIndex});
+class _EmptyNotifications extends StatelessWidget {
+  const _EmptyNotifications();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFDCE8F8), width: 0.5)),
-      ),
-      child: BottomNavigationBar(
-        currentIndex: currentIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF0a1628),
-        unselectedItemColor: const Color(0xFF6B7280),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-        onTap: (index) {
-          if (index == currentIndex) return;
-          Widget page = const HomeScreen();
-          if (index == 1) page = const BusLinesScreen();
-          if (index == 2) page = const QrPaymentScreen();
-          if (index == 3) page = const NotificationsScreen();
-          if (index == 4) page = const ProfileScreen();
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder(
-              pageBuilder: (_, __, ___) => page,
-              transitionDuration: const Duration(milliseconds: 200),
-              transitionsBuilder: (_, anim, __, child) =>
-                  FadeTransition(opacity: anim, child: child),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                color: _NotificationsScreenState.primaryBlue.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.notifications_none_rounded,
+                color: _NotificationsScreenState.primaryBlue,
+                size: 36,
+              ),
             ),
-          );
-        },
-        items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined),
-              activeIcon: Icon(Icons.home_rounded),
-              label: 'Accueil'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.directions_bus_outlined),
-              activeIcon: Icon(Icons.directions_bus_rounded),
-              label: 'Bus'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.qr_code_outlined),
-              activeIcon: Icon(Icons.qr_code_rounded),
-              label: 'QR'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.credit_card_rounded),
-              activeIcon: Icon(Icons.credit_card_rounded),
-              label: 'Abonnements'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.person_outline_rounded),
-              activeIcon: Icon(Icons.person_rounded),
-              label: 'Profil'),
-        ],
+            const SizedBox(height: 18),
+            const Text(
+              'Aucune notification',
+              style: TextStyle(
+                color: _NotificationsScreenState.darkText,
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Vous êtes à jour !\nNous vous préviendrons en cas de nouveauté.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _NotificationsScreenState.mutedText,
+                fontSize: 12,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

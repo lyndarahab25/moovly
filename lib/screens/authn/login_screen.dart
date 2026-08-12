@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: const Column(
                     children: [
                       Text(
-                        'Welcome back!',
+                        'Bon retour!',
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
@@ -117,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        'Login to your account',
+                        'Connectez-vous à votre compte',
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.black38,
@@ -163,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'Email',
+                                'E-mail',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               alignment: Alignment.center,
                               child: Text(
-                                'Phone Number',
+                                'Numéro de téléphone',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.bold,
@@ -280,8 +280,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 : TextInputType.phone,
                             decoration: InputDecoration(
                               hintText: _isEmailLogin
-                                  ? 'Email Address'
-                                  : 'Phone Number',
+                                  ? 'Adresse email'
+                                  : 'Numéro de téléphone',
                               hintStyle: const TextStyle(
                                   color: Colors.black26, fontSize: 13),
                               border: InputBorder.none,
@@ -354,7 +354,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             controller: _passwordController,
                             obscureText: _obscurePassword,
                             decoration: InputDecoration(
-                              hintText: 'Password',
+                              hintText: 'Mot de passe',
                               hintStyle: const TextStyle(
                                   color: Colors.black26, fontSize: 13),
                               suffixIcon: Padding(
@@ -390,7 +390,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: TextButton(
                       onPressed: () {},
                       child: const Text(
-                        'Forgot Password?',
+                        'Mot de passe oublié?',
                         style: TextStyle(
                           color: Colors.black38,
                           fontSize: 12,
@@ -435,7 +435,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () =>
                           Navigator.pushReplacementNamed(context, '/home'),
                       child: const Text(
-                        'Sign in',
+                        'Se connecter',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
@@ -460,7 +460,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         child: Text(
-                          'Or sign in with',
+                          'ou continuer avec',
                           style: TextStyle(
                             color: Colors.black26,
                             fontSize: 11,
@@ -582,7 +582,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
-                        "Don't have an account? ",
+                        "Vous n'avez pas encore de compte? ",
                         style: TextStyle(
                             color: Colors.black38,
                             fontSize: 13,
@@ -591,7 +591,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       GestureDetector(
                         onTap: () => Navigator.pushNamed(context, '/register'),
                         child: const Text(
-                          "Sign up",
+                          "S'inscrire",
                           style: TextStyle(
                             color: Color(
                                 0xFF1D4ED8), // Couleur de lien bleu comme demandé
