@@ -21,7 +21,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Color textMuted = Color(0xFF64748B);
   static const Color borderColor = Color(0xFFE2E8F0);
   static const Color lightBlue = Color(0xFFEAF0FF);
-  static const Color red = Color(0xFFFF3B3B);
+  static const Color red = Color(0xFFDC2626);
 
   // ─────────────────────────────────────────────────────────────
   // USER DATA
@@ -34,6 +34,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _language = 'Français';
   bool _darkMode = false;
+  bool _notificationsEnabled = true;
 
   // ─────────────────────────────────────────────────────────────
   // BUILD
@@ -102,23 +103,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // TITRE CENTRÉ
-          const Center(
-            child: Text(
-              'Profil',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-
-          // BOUTON PARAMÈTRES À DROITE
-          Align(
-            alignment: Alignment.centerRight,
+          // FLÈCHE RETOUR
+          Positioned(
+            left: 0,
             child: Container(
               width: 48,
               height: 48,
@@ -126,25 +113,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: Color(0xFFE2E8F0),
+                  color: const Color(0xFFE2E8F0),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withOpacity(0.035),
                     blurRadius: 10,
                     offset: const Offset(0, 3),
                   ),
                 ],
               ),
               child: IconButton(
-                onPressed: () {
-                  _showSettings();
-                },
+                onPressed: () => Navigator.pop(context),
+                padding: EdgeInsets.zero,
                 icon: const Icon(
-                  Icons.settings_outlined,
-                  color: Color(0xFF0F172A),
-                  size: 21,
+                  Icons.arrow_back_rounded,
+                  color: Color(0xFF172033),
+                  size: 22,
                 ),
+              ),
+            ),
+          ),
+
+          // TITRE CENTRÉ
+          const Center(
+            child: Text(
+              'Profil',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF172033),
+                letterSpacing: -0.6,
               ),
             ),
           ),
@@ -269,9 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             letterSpacing: -0.5,
                           ),
                         ),
-
                         const SizedBox(height: 5),
-
                         Text(
                           _email,
                           maxLines: 1,
@@ -282,40 +280,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontWeight: FontWeight.w500,
                           ),
                         ),
-
                         const SizedBox(height: 13),
-
-                        // Bouton modifier
-                        SizedBox(
-                          height: 36,
-                          child: OutlinedButton.icon(
-                            onPressed: _showPersonalInfo,
-                            icon: const Icon(
-                              Icons.edit_rounded,
-                              size: 15,
-                            ),
-                            label: const Text(
-                              'Modifier',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              backgroundColor: Colors.white.withOpacity(0.12),
-                              side: BorderSide(
-                                color: Colors.white.withOpacity(0.25),
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                          ),
-                        ),
                       ],
                     ),
                   ),
@@ -455,15 +420,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             fontWeight: FontWeight.w700,
           ),
         ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: red,
+        style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
-          side: BorderSide(
-            color: red.withOpacity(0.30),
-            width: 1.2,
+          foregroundColor: red,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(
+            vertical: 14,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(26),
+            side: BorderSide(
+              color: const Color(0xFFDC2626).withOpacity(0.20),
+            ),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
           ),
         ),
       ),
@@ -586,8 +558,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           backgroundColor: primaryBlue,
                           foregroundColor: Colors.white,
                           elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                          ),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(26),
+                          ),
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         child: const Text(
@@ -873,15 +852,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 color: const Color(0xFFD4AF37),
                 active: false,
               ),
-              const SizedBox(height: 18),
-              const Text(
-                'La gestion réelle des abonnements pourra être connectée à Firebase ultérieurement.',
-                style: TextStyle(
-                  color: textMuted,
-                  fontSize: 11,
-                  height: 1.4,
-                ),
-              ),
             ],
           ),
         );
@@ -1131,15 +1101,62 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Sécurité
-                  _settingsSimpleItem(
-                    icon: Icons.lock_outline_rounded,
-                    title: 'Sécurité',
-                    subtitle: 'Mot de passe et protection',
-                    onTap: () {
-                      Navigator.pop(sheetContext);
-                      _showChangePassword();
-                    },
+                  // Notifications
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 15,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(17),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      secondary: Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: lightBlue,
+                          borderRadius: BorderRadius.circular(13),
+                        ),
+                        child: const Icon(
+                          Icons.notifications_outlined,
+                          color: primaryBlue,
+                        ),
+                      ),
+                      title: const Text(
+                        'Notifications',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: textDark,
+                        ),
+                      ),
+                      subtitle: Text(
+                        _notificationsEnabled ? 'Activées' : 'Désactivées',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: textMuted,
+                        ),
+                      ),
+                      value: _notificationsEnabled,
+                      activeColor: primaryBlue,
+                      onChanged: (value) {
+                        setState(() {
+                          _notificationsEnabled = value;
+                        });
+
+                        setSheetState(() {});
+
+                        _showMessage(
+                          value
+                              ? 'Notifications activées'
+                              : 'Notifications désactivées',
+                        );
+                      },
+                    ),
                   ),
                 ],
               ),

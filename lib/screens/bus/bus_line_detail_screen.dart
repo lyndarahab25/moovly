@@ -292,30 +292,51 @@ class _BusLineDetailScreenState extends State<BusLineDetailScreen> {
         child: SizedBox(
           width: double.infinity,
           height: 56,
-          child: ElevatedButton.icon(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => MapScreen(line: widget.line),
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: primaryBlue,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [
+                  Color(0xFF0057FF),
+                  Color(0xFF2855D9),
+                ],
               ),
-              elevation: 4,
-              shadowColor: primaryBlue.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(26),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryBlue.withOpacity(0.20),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-            icon: const Icon(Icons.directions_bus_filled_rounded, size: 22),
-            label: const Text(
-              'Suivi en temps réel',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MapScreen(line: widget.line),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                shadowColor: Colors.transparent,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
+              ),
+              icon: const Icon(
+                Icons.map_outlined,
+                size: 20,
+              ),
+              label: const Text(
+                'Voir sur la carte',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ),

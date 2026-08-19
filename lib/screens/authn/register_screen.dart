@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:animate_do/animate_do.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,35 +8,98 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  // ============================================================
+  // CONTROLLERS
+  // ============================================================
+
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  // ============================================================
+  // STATE
+  // ============================================================
+
+  bool _isEmailRegister = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-  bool _isEmailSignup =
-      true; // Bascule dynamique entre Email et Téléphone pour s'inscrire
+
   String? _selectedWilaya;
 
-  // Liste des Wilayas majeures d'Algérie
+  // ============================================================
+  // WILAYAS
+  // ============================================================
+
   final List<String> _wilayas = [
-    '01 - Adrar',
-    '02 - Chlef',
-    '06 - Béjaïa',
-    '09 - Blida',
-    '10 - Bouira',
-    '15 - Tizi Ouzou',
-    '16 - Alger',
-    '19 - Sétif',
-    '25 - Constantine',
-    '31 - Oran',
-    '35 - Boumerdès',
-    '39 - El Oued',
-    '47 - Ghardaïa',
-    '58 - In Salah'
+    'Adrar',
+    'Chlef',
+    'Laghouat',
+    'Oum El Bouaghi',
+    'Batna',
+    'Béjaïa',
+    'Biskra',
+    'Béchar',
+    'Blida',
+    'Bouira',
+    'Tamanrasset',
+    'Tébessa',
+    'Tlemcen',
+    'Tiaret',
+    'Tizi Ouzou',
+    'Alger',
+    'Djelfa',
+    'Jijel',
+    'Sétif',
+    'Saïda',
+    'Skikda',
+    'Sidi Bel Abbès',
+    'Annaba',
+    'Guelma',
+    'Constantine',
+    'Médéa',
+    'Mostaganem',
+    'M’Sila',
+    'Mascara',
+    'Ouargla',
+    'Oran',
+    'El Bayadh',
+    'Illizi',
+    'Bordj Bou Arréridj',
+    'Boumerdès',
+    'El Tarf',
+    'Tindouf',
+    'Tissemsilt',
+    'El Oued',
+    'Khenchela',
+    'Souk Ahras',
+    'Tipaza',
+    'Mila',
+    'Aïn Defla',
+    'Naâma',
+    'Aïn Témouchent',
+    'Ghardaïa',
+    'Relizane',
   ];
+
+  // ============================================================
+  // COLORS
+  // ============================================================
+
+  static const Color primaryBlue = Color(0xFF2563EB);
+  static const Color deepBlue = Color(0xFF172554);
+
+  static const Color background = Color(0xFFF4F7FC);
+  static const Color dark = Color(0xFF172033);
+  static const Color muted = Color(0xFF71809D);
+  static const Color fieldHint = Color(0xFFA5B0C4);
+
+  static const Color borderColor = Color(0xFFE1E5EE);
+
+  // ============================================================
+  // DISPOSE
+  // ============================================================
 
   @override
   void dispose() {
@@ -49,745 +111,845 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
-    // Palette Premium Moovly
-    const Color primaryBlue = Color(0xFF0F172A);
-    const Color royalBlue = Color(0xFF1D4ED8);
-    const Color lightBlueBg = Color(0xFFF1F5F9);
-    const Color cardBgColor = Colors.white;
-    const Color mauveTouch = Color(0xFF8B5CF6); // Touche de mauve exclusive
-
     return Scaffold(
-      backgroundColor: lightBlueBg,
+      backgroundColor: background,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.fromLTRB(31, 28, 31, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ==================================================
+              // HEADER
+              // ==================================================
+
+              const Text(
+                'Créer un compte',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: dark,
+                  fontSize: 27,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.6,
+                ),
+              ),
+
+              const SizedBox(height: 7),
+
+              const Text(
+                'Rejoignez Moovly et simplifiez vos trajets au quotidien',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: muted,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+
+              const SizedBox(height: 22),
+
+              // ==================================================
+              // EMAIL / PHONE
+              // ==================================================
+
+              _buildRegisterTypeSelector(),
+
+              const SizedBox(height: 22),
+
+              // ==================================================
+              // NAME
+              // ==================================================
+
+              _buildTextField(
+                controller: _nameController,
+                icon: Icons.person_outline_rounded,
+                hint: 'Nom complet',
+                keyboardType: TextInputType.name,
+              ),
+
+              const SizedBox(height: 12),
+
+              // ==================================================
+              // EMAIL / PHONE
+              // ==================================================
+
+              _buildTextField(
+                controller:
+                    _isEmailRegister ? _emailController : _phoneController,
+                icon: _isEmailRegister
+                    ? Icons.mail_outline_rounded
+                    : Icons.phone_android_outlined,
+                hint:
+                    _isEmailRegister ? 'Adresse e-mail' : 'Numéro de téléphone',
+                keyboardType: _isEmailRegister
+                    ? TextInputType.emailAddress
+                    : TextInputType.phone,
+              ),
+
+              const SizedBox(height: 12),
+
+              // ==================================================
+              // WILAYA
+              // ==================================================
+
+              _buildWilayaField(),
+
+              const SizedBox(height: 12),
+
+              // ==================================================
+              // PASSWORD
+              // ==================================================
+
+              _buildPasswordField(
+                controller: _passwordController,
+                hint: 'Créer un mot de passe',
+                obscure: _obscurePassword,
+                onToggle: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 12),
+
+              // ==================================================
+              // CONFIRM PASSWORD
+              // ==================================================
+
+              _buildPasswordField(
+                controller: _confirmPasswordController,
+                hint: 'Confirmer le mot de passe',
+                obscure: _obscureConfirmPassword,
+                onToggle: () {
+                  setState(() {
+                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 22),
+
+              // ==================================================
+              // REGISTER BUTTON
+              // ==================================================
+
+              _buildRegisterButton(),
+
+              const SizedBox(height: 40),
+
+              // ==================================================
+              // DIVIDER
+              // ==================================================
+
+              _buildDivider(),
+
+              const SizedBox(height: 20),
+
+              // ==================================================
+              // SOCIAL
+              // ==================================================
+
+              _buildSocialButtons(),
+
+              const SizedBox(height: 35),
+
+              // ==================================================
+              // LOGIN LINK
+              // ==================================================
+
+              _buildLoginLink(),
+
+              const SizedBox(height: 18),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // EMAIL / PHONE SELECTOR
+  // ============================================================
+
+  Widget _buildRegisterTypeSelector() {
+    return Container(
+      height: 62,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEFF2F8),
+        borderRadius: BorderRadius.circular(31),
+        border: Border.all(
+          color: const Color(0xFFE1E6EF),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isEmailRegister = true;
+                });
+              },
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: _isEmailRegister ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(27),
+                  boxShadow: _isEmailRegister
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.035),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  'E-mail',
+                  style: TextStyle(
+                    color: _isEmailRegister ? primaryBlue : muted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _isEmailRegister = false;
+                });
+              },
+              child: Container(
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: !_isEmailRegister ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(27),
+                  boxShadow: !_isEmailRegister
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.035),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ]
+                      : null,
+                ),
+                child: Text(
+                  'Numéro de téléphone',
+                  style: TextStyle(
+                    color: !_isEmailRegister ? primaryBlue : muted,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // TEXT FIELD
+  // ============================================================
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required IconData icon,
+    required String hint,
+    required TextInputType keyboardType,
+  }) {
+    return Row(
+      children: [
+        _buildIconCircle(icon),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            height: 62,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(31),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.035),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.9),
+                  blurRadius: 10,
+                  offset: const Offset(-3, -3),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: controller,
+              keyboardType: keyboardType,
+              style: const TextStyle(
+                color: dark,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: fieldHint,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 21,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // PASSWORD FIELD
+  // ============================================================
+
+  Widget _buildPasswordField({
+    required TextEditingController controller,
+    required String hint,
+    required bool obscure,
+    required VoidCallback onToggle,
+  }) {
+    return Row(
+      children: [
+        _buildIconCircle(Icons.lock_outline_rounded),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Container(
+            height: 62,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(31),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.035),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+                BoxShadow(
+                  color: Colors.white.withOpacity(0.9),
+                  blurRadius: 10,
+                  offset: const Offset(-3, -3),
+                ),
+              ],
+            ),
+            child: TextField(
+              controller: controller,
+              obscureText: obscure,
+              style: const TextStyle(
+                color: dark,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: hint,
+                hintStyle: const TextStyle(
+                  color: fieldHint,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.only(right: 7),
+                  child: IconButton(
+                    onPressed: onToggle,
+                    icon: Icon(
+                      obscure
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
+                      color: muted,
+                      size: 21,
+                    ),
+                  ),
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 21,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // ICON CIRCLE
+  // ============================================================
+
+  Widget _buildIconCircle(IconData icon) {
+    return Container(
+      width: 62,
+      height: 62,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.035),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.9),
+            blurRadius: 10,
+            offset: const Offset(-3, -3),
+          ),
+        ],
+      ),
+      child: Icon(
+        icon,
+        color: primaryBlue,
+        size: 23,
+      ),
+    );
+  }
+
+  // ============================================================
+  // WILAYA
+  // ============================================================
+
+  Widget _buildWilayaField() {
+    return GestureDetector(
+      onTap: _showWilayaPicker,
+      child: Row(
+        children: [
+          _buildIconCircle(Icons.map_outlined),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 62,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(31),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.035),
+                    blurRadius: 12,
+                    offset: const Offset(0, 5),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.9),
+                    blurRadius: 10,
+                    offset: const Offset(-3, -3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedWilaya ?? 'Sélectionnez votre Wilaya',
+                      style: TextStyle(
+                        color: _selectedWilaya == null ? fieldHint : dark,
+                        fontSize: 14,
+                        fontWeight: _selectedWilaya == null
+                            ? FontWeight.w500
+                            : FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: muted,
+                    size: 24,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // WILAYA PICKER
+  // ============================================================
+
+  void _showWilayaPicker() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Container(
+          height: MediaQuery.of(sheetContext).size.height * 0.72,
+          decoration: const BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(30),
+            ),
+          ),
+          child: SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const SizedBox(height: 30),
-
-                FadeInDown(
-                  duration: const Duration(milliseconds: 1200),
-                  child: Center(
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: cardBgColor,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 12,
-                            offset: const Offset(0, 6),
-                          ),
-                          BoxShadow(
-                            color: Colors.white.withOpacity(0.9),
-                            blurRadius: 12,
-                            offset: const Offset(-4, -4),
-                          ),
-                        ],
-                      ),
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Positioned(
-                            bottom: 18,
-                            child: Icon(
-                              Icons.navigation_rounded,
-                              size: 38,
-                              color: royalBlue,
-                            ),
-                          ),
-                          Positioned(
-                            top: 18,
-                            right: 18,
-                            child: Transform.rotate(
-                              angle: 0.5,
-                              child: const Icon(
-                                Icons.bolt_rounded,
-                                size: 26,
-                                color: mauveTouch,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                FadeInDown(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 150),
-                  child: const Column(
-                    children: [
-                      Text(
-                        'Creer un compte ',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: primaryBlue,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'Rejoindre Moovly pour une experience ',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.black38,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 250),
-                  child: Container(
-                    height: 46,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.025),
-                      borderRadius: BorderRadius.circular(23),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _isEmailSignup = true),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: _isEmailSignup
-                                    ? cardBgColor
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(23),
-                                boxShadow: _isEmailSignup
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.03),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 3),
-                                        )
-                                      ]
-                                    : [],
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                'E-mail',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: _isEmailSignup
-                                      ? royalBlue
-                                      : Colors.black38,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => setState(() => _isEmailSignup = false),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: !_isEmailSignup
-                                    ? cardBgColor
-                                    : Colors.transparent,
-                                borderRadius: BorderRadius.circular(23),
-                                boxShadow: !_isEmailSignup
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.03),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 3),
-                                        )
-                                      ]
-                                    : [],
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                'Numéro de téléphone',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: !_isEmailSignup
-                                      ? royalBlue
-                                      : Colors.black38,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // CHAMP NOM COMPLET SÉPARÉ (Icône cercle + Pilule de texte)
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 350),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.person_outline_rounded,
-                            color: mauveTouch, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _nameController,
-                            keyboardType: TextInputType.name,
-                            decoration: const InputDecoration(
-                              hintText: 'Nom complet',
-                              hintStyle: TextStyle(
-                                  color: Colors.black26, fontSize: 13),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
                 const SizedBox(height: 12),
-
-                // CHAMP DYNAMIQUE SÉPARÉ
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 450),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          _isEmailSignup
-                              ? Icons.mail_outline_rounded
-                              : Icons.phone_android_rounded,
-                          color: mauveTouch,
-                          size: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            key: _isEmailSignup
-                                ? const ValueKey('email_reg')
-                                : const ValueKey('phone_reg'),
-                            controller: _isEmailSignup
-                                ? _emailController
-                                : _phoneController,
-                            keyboardType: _isEmailSignup
-                                ? TextInputType.emailAddress
-                                : TextInputType.phone,
-                            decoration: InputDecoration(
-                              hintText: _isEmailSignup
-                                  ? 'Addresse e-mail'
-                                  : 'Numéro de téléphone',
-                              hintStyle: const TextStyle(
-                                  color: Colors.black26, fontSize: 13),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                Container(
+                  width: 45,
+                  height: 5,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFD5D8E0),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-
-                const SizedBox(height: 12),
-
-                // SÉLECTEUR DE WILAYA ALGERIENNE STYLE SOFT-UI SÉPARÉ
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 550),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.map_outlined,
-                            color: mauveTouch, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: DropdownButtonFormField<String>(
-                            value: _selectedWilaya,
-                            icon: const Padding(
-                              padding: EdgeInsets.only(right: 14.0),
-                              child: Icon(Icons.keyboard_arrow_down_rounded,
-                                  color: Colors.black26),
-                            ),
-                            decoration: const InputDecoration(
-                              hintText: 'Sélectionnez votre Wilaya',
-                              hintStyle: TextStyle(
-                                  color: Colors.black26, fontSize: 13),
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.only(left: 20),
-                            ),
-                            items: _wilayas.map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(
-                                  value,
-                                  style: const TextStyle(
-                                      color: primaryBlue,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500),
-                                ),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) =>
-                                setState(() => _selectedWilaya = newValue),
-                          ),
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 22),
+                const Text(
+                  'Choisir votre Wilaya',
+                  style: TextStyle(
+                    color: dark,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-
-                const SizedBox(height: 12),
-
-                // CHAMP MOT DE PASSE SÉPARÉ
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 650),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.lock_open_rounded,
-                            color: mauveTouch, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _passwordController,
-                            obscureText: _obscurePassword,
-                            decoration: InputDecoration(
-                              hintText: 'Créer un mot de passe',
-                              hintStyle: const TextStyle(
-                                  color: Colors.black26, fontSize: 13),
-                              suffixIcon: Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: IconButton(
-                                  icon: Icon(
-                                    _obscurePassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    color: Colors.black26,
-                                    size: 18,
-                                  ),
-                                  onPressed: () => setState(() =>
-                                      _obscurePassword = !_obscurePassword),
-                                ),
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 12),
-
-                // CHAMP CONFIRMATION SÉPARÉ
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 750),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.03),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(Icons.lock_outline_rounded,
-                            color: mauveTouch, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.03),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: TextField(
-                            controller: _confirmPasswordController,
-                            obscureText: _obscureConfirmPassword,
-                            decoration: InputDecoration(
-                              hintText: 'Confirmer le mot de passe',
-                              hintStyle: const TextStyle(
-                                  color: Colors.black26, fontSize: 13),
-                              suffixIcon: Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: IconButton(
-                                  icon: Icon(
-                                    _obscureConfirmPassword
-                                        ? Icons.visibility_off_outlined
-                                        : Icons.visibility_outlined,
-                                    color: Colors.black26,
-                                    size: 18,
-                                  ),
-                                  onPressed: () => setState(() =>
-                                      _obscureConfirmPassword =
-                                          !_obscureConfirmPassword),
-                                ),
-                              ),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 14),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 25),
-
-                // Bouton centré et réduit style pilule
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 850),
-                  child: Container(
-                    height: 50,
-                    width: 180, // Largeur harmonieuse
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [royalBlue, primaryBlue],
-                      ),
-                      borderRadius: BorderRadius.circular(25),
-                      boxShadow: [
-                        BoxShadow(
-                          color: mauveTouch.withOpacity(0.18),
-                          blurRadius: 12,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
+                const SizedBox(height: 18),
+                Expanded(
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      20,
+                      0,
+                      20,
+                      20,
                     ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      onPressed: () =>
-                          Navigator.pushReplacementNamed(context, '/home'),
-                      child: const Text(
-                        'S\'inscrire',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
+                    itemCount: _wilayas.length,
+                    itemBuilder: (context, index) {
+                      final wilaya = _wilayas[index];
+                      final selected = wilaya == _selectedWilaya;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        decoration: BoxDecoration(
                           color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 900),
-                  child: Row(
-                    children: [
-                      Expanded(
-                          child: Divider(
-                              color: Colors.black.withOpacity(0.05),
-                              thickness: 1)),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'ou continuer avec',
-                          style: TextStyle(
-                            color: Colors.black26,
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: selected ? primaryBlue : borderColor,
                           ),
                         ),
-                      ),
-                      Expanded(
-                          child: Divider(
-                              color: Colors.black.withOpacity(0.05),
-                              thickness: 1)),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 950),
-                  child: Row(
-                    children: [
-                      // Google Box
-                      Expanded(
-                        child: Container(
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(26),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
+                        child: ListTile(
+                          onTap: () {
+                            setState(() {
+                              _selectedWilaya = wilaya;
+                            });
+                            Navigator.pop(sheetContext);
+                          },
+                          leading: Icon(
+                            Icons.location_on_outlined,
+                            color: selected ? primaryBlue : muted,
                           ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(26),
-                            onTap: () {},
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Image.network(
-                                  'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',
-                                  width: 22,
-                                  height: 22,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(
-                                    Icons.g_mobiledata_rounded,
-                                    color: Colors.redAccent,
-                                    size: 30,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Google',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    color: primaryBlue,
-                                  ),
-                                )
-                              ],
+                          title: Text(
+                            wilaya,
+                            style: TextStyle(
+                              color: selected ? primaryBlue : dark,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      // Apple Box
-                      Expanded(
-                        child: Container(
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: cardBgColor,
-                            borderRadius: BorderRadius.circular(26),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.02),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(26),
-                            onTap: () {},
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.apple_rounded,
-                                    color: Colors.black87, size: 20),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Apple',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    color: primaryBlue,
-                                  ),
+                          trailing: selected
+                              ? const Icon(
+                                  Icons.check_circle_rounded,
+                                  color: primaryBlue,
                                 )
-                              ],
-                            ),
-                          ),
+                              : null,
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
-
-                const SizedBox(height: 30),
-
-                FadeInUp(
-                  duration: const Duration(milliseconds: 1000),
-                  delay: const Duration(milliseconds: 1000),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        " Avez-vous déjà un compte? ",
-                        style: TextStyle(
-                            color: Colors.black38,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.pushNamed(context, '/login'),
-                        child: const Text(
-                          "Se connecter",
-                          style: TextStyle(
-                            color: Color(0xFF1D4ED8), // Lien bleu royal
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 25),
               ],
             ),
           ),
+        );
+      },
+    );
+  }
+
+  // ============================================================
+  // REGISTER BUTTON
+  // ============================================================
+
+  Widget _buildRegisterButton() {
+    return Container(
+      height: 58,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            primaryBlue,
+            deepBlue,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(29),
+        boxShadow: [
+          BoxShadow(
+            color: primaryBlue.withOpacity(0.20),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: _handleRegister,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          shadowColor: Colors.transparent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(29),
+          ),
+        ),
+        child: const Text(
+          "S'inscrire",
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // DIVIDER
+  // ============================================================
+
+  Widget _buildDivider() {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E5EE),
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 15),
+          child: Text(
+            'ou continuer avec',
+            style: TextStyle(
+              color: muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E5EE),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ============================================================
+  // SOCIAL BUTTONS
+  // ============================================================
+
+  Widget _buildSocialButtons() {
+    return Row(
+      children: [
+        Expanded(
+          child: _socialButton(
+            icon: const Text(
+              'G',
+              style: TextStyle(
+                color: Color(0xFF4285F4),
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            label: 'Google',
+            onTap: () {},
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: _socialButton(
+            icon: const Icon(
+              Icons.apple_rounded,
+              color: Colors.black,
+              size: 22,
+            ),
+            label: 'Apple',
+            onTap: () {},
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _socialButton({
+    required Widget icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      height: 54,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: dark,
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(27),
+          ),
+          elevation: 0,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            icon,
+            const SizedBox(width: 9),
+            Text(
+              label,
+              style: const TextStyle(
+                color: dark,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // LOGIN LINK
+  // ============================================================
+
+  Widget _buildLoginLink() {
+    return Center(
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        children: [
+          const Text(
+            'Vous avez déjà un compte ? ',
+            style: TextStyle(
+              color: muted,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              Navigator.pushReplacementNamed(
+                context,
+                '/login',
+              );
+            },
+            child: const Text(
+              'Se connecter',
+              style: TextStyle(
+                color: primaryBlue,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // REGISTER ACTION
+  // ============================================================
+
+  void _handleRegister() {
+    final name = _nameController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty) {
+      _showMessage('Veuillez entrer votre nom complet.');
+      return;
+    }
+
+    if (_isEmailRegister && _emailController.text.trim().isEmpty) {
+      _showMessage(
+        'Veuillez entrer votre adresse e-mail.',
+      );
+      return;
+    }
+
+    if (!_isEmailRegister && _phoneController.text.trim().isEmpty) {
+      _showMessage(
+        'Veuillez entrer votre numéro de téléphone.',
+      );
+      return;
+    }
+
+    if (_selectedWilaya == null) {
+      _showMessage(
+        'Veuillez sélectionner votre Wilaya.',
+      );
+      return;
+    }
+
+    if (password.isEmpty) {
+      _showMessage(
+        'Veuillez créer un mot de passe.',
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      _showMessage(
+        'Les mots de passe ne correspondent pas.',
+      );
+      return;
+    }
+
+    // Firebase sera branché après.
+    Navigator.pushReplacementNamed(
+      context,
+      '/home',
+    );
+  }
+
+  // ============================================================
+  // MESSAGE
+  // ============================================================
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: dark,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
         ),
       ),
     );

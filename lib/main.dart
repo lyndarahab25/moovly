@@ -9,8 +9,26 @@ void main() {
   runApp(const MoovlyApp());
 }
 
-class MoovlyApp extends StatelessWidget {
+class MoovlyApp extends StatefulWidget {
   const MoovlyApp({super.key});
+
+  @override
+  State<MoovlyApp> createState() => _MoovlyAppState();
+}
+
+class _MoovlyAppState extends State<MoovlyApp> {
+  bool _isDarkMode = false;
+  ThemeData get _darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: const Color(0xFF0F172A),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF1D4ED8),
+        brightness: Brightness.dark,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +74,8 @@ class MoovlyApp extends StatelessWidget {
       title: 'Moovly',
       debugShowCheckedModeBanner: false,
       theme: premiumTheme,
+      darkTheme: _darkTheme,
+      themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),

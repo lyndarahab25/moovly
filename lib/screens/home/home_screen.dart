@@ -9,6 +9,7 @@ import '../qr/qr_screen.dart';
 import '../bus/bus_lines_screen.dart';
 import '../wallet/wallet_screen.dart';
 import '../ai/gold_required_screen.dart';
+import '../../core/widgets/recharge_bottom_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -340,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     alignment: Alignment.centerLeft,
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        setState(() => _currentIndex = 3);
+                        showRechargeSheet(context);
                       },
                       icon: const Icon(
                         Icons.add_rounded,

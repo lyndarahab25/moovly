@@ -59,13 +59,26 @@ class _WalletScreenState extends State<WalletScreen> {
         backgroundColor: background,
         elevation: 0,
         automaticallyImplyLeading: false,
-        leading: IconButton(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(
-            Icons.arrow_back_ios_new_rounded,
-            size: 22,
+        leading: Container(
+          margin: const EdgeInsets.only(left: 16),
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFE2E8F0),
+            ),
           ),
-          color: dark,
+          child: IconButton(
+            onPressed: () => Navigator.pop(context),
+            padding: EdgeInsets.zero,
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              color: dark,
+              size: 22,
+            ),
+          ),
         ),
         centerTitle: true,
         title: Text(
@@ -709,26 +722,47 @@ class _WalletScreenState extends State<WalletScreen> {
                 SizedBox(
                   width: double.infinity,
                   height: 52,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(sheetContext);
-                      _openRechargeSheet();
-                    },
-                    icon: const Icon(
-                      Icons.add_circle_outline_rounded,
-                    ),
-                    label: const Text(
-                      "Recharger mon Wallet",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF0057FF),
+                          Color(0xFF2855D9),
+                        ],
                       ),
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryBlue.withOpacity(0.20),
+                          blurRadius: 12,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryBlue,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        _openRechargeSheet();
+                      },
+                      icon: const Icon(
+                        Icons.add_rounded,
+                        size: 20,
+                      ),
+                      label: const Text(
+                        "Recharger mon Wallet",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        shadowColor: Colors.transparent,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(26),
+                        ),
                       ),
                     ),
                   ),
@@ -1273,15 +1307,19 @@ class _WalletScreenState extends State<WalletScreen> {
                       backgroundColor: primaryBlue,
                       foregroundColor: Colors.white,
                       elevation: 0,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(26),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     child: const Text(
                       "Simuler la validation",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                      ),
                     ),
                   ),
                 ),

@@ -10,28 +10,28 @@ class BusLinesScreen extends StatefulWidget {
 
 class _BusLinesScreenState extends State<BusLinesScreen> {
   // ============================================================
-  // COLORS
+  // MOOVLY THEME
   // ============================================================
 
-  static const Color background = Color(0xFFF8FAFC);
-  static const Color primaryBlue = Color(0xFF1557FF);
+  static const Color background = Color(0xFFF7F9FC);
+  static const Color primaryBlue = Color(0xFF0057FF);
   static const Color darkText = Color(0xFF172033);
   static const Color mutedText = Color(0xFF718096);
-  static const Color border = Color(0xFFE3EAF3);
+  static const Color border = Color(0xFFE2E8F0);
 
   // ============================================================
-  // SEARCH / FILTER
+  // SEARCH + FILTER
   // ============================================================
 
-  final TextEditingController _searchController = TextEditingController();
+  final TextEditingController searchController = TextEditingController();
 
-  int _selectedFilter = 0;
+  int selectedFilter = 0;
 
   // ============================================================
   // BUS LINES
   // ============================================================
 
-  final List<Map<String, dynamic>> _lines = [
+  final List<Map<String, dynamic>> lines = [
     {
       'name': '3',
       'from': 'Cité 1200 Logts',
@@ -40,7 +40,8 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
       'end': 'Centre-ville',
       'crowd': 'Faible affluence',
       'crowdLevel': 0,
-      'nextArrival': 'Prochain bus : 3 min',
+      'nextArrival': 'Prochain : 3 min',
+      'next': '3 min',
       'stopsCount': 8,
       'busesCount': 3,
       'favorite': false,
@@ -53,7 +54,8 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
       'end': 'Centre-ville',
       'crowd': 'Faible affluence',
       'crowdLevel': 0,
-      'nextArrival': 'Prochain bus : 5 min',
+      'nextArrival': 'Prochain : 5 min',
+      'next': '5 min',
       'stopsCount': 10,
       'busesCount': 4,
       'favorite': false,
@@ -66,7 +68,8 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
       'end': 'Université',
       'crowd': 'Moyenne affluence',
       'crowdLevel': 1,
-      'nextArrival': 'Prochain bus : 7 min',
+      'nextArrival': 'Prochain : 7 min',
+      'next': '7 min',
       'stopsCount': 12,
       'busesCount': 3,
       'favorite': false,
@@ -79,7 +82,8 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
       'end': 'Gare Ferroviaire',
       'crowd': 'Élevée affluence',
       'crowdLevel': 2,
-      'nextArrival': 'Prochain bus : 4 min',
+      'nextArrival': 'Prochain : 4 min',
+      'next': '4 min',
       'stopsCount': 9,
       'busesCount': 5,
       'favorite': false,
@@ -92,7 +96,8 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
       'end': 'Centre-ville',
       'crowd': 'Faible affluence',
       'crowdLevel': 0,
-      'nextArrival': 'Prochain bus : 8 min',
+      'nextArrival': 'Prochain : 8 min',
+      'next': '8 min',
       'stopsCount': 11,
       'busesCount': 3,
       'favorite': false,
@@ -105,7 +110,8 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
       'end': 'Université',
       'crowd': 'Moyenne affluence',
       'crowdLevel': 1,
-      'nextArrival': 'Prochain bus : 6 min',
+      'nextArrival': 'Prochain : 6 min',
+      'next': '6 min',
       'stopsCount': 10,
       'busesCount': 4,
       'favorite': false,
@@ -118,7 +124,8 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
       'end': 'Gare Routière',
       'crowd': 'Faible affluence',
       'crowdLevel': 0,
-      'nextArrival': 'Prochain bus : 9 min',
+      'nextArrival': 'Prochain : 9 min',
+      'next': '9 min',
       'stopsCount': 7,
       'busesCount': 2,
       'favorite': false,
@@ -129,41 +136,37 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   // FILTERED LINES
   // ============================================================
 
-  List<Map<String, dynamic>> get _filteredLines {
-    List<Map<String, dynamic>> result = List.from(_lines);
+  List<Map<String, dynamic>> get filteredLines {
+    List<Map<String, dynamic>> result = List<Map<String, dynamic>>.from(lines);
 
-    if (_selectedFilter == 1) {
+    if (selectedFilter == 1) {
       result = result.where((line) => line['crowdLevel'] == 0).toList();
-    }
-
-    if (_selectedFilter == 2) {
+    } else if (selectedFilter == 2) {
       result = result.where((line) => line['crowdLevel'] == 1).toList();
-    }
-
-    if (_selectedFilter == 3) {
+    } else if (selectedFilter == 3) {
       result = result.where((line) => line['crowdLevel'] == 2).toList();
     }
 
-    final query = _searchController.text.trim().toLowerCase();
+    final query = searchController.text.trim().toLowerCase();
 
     if (query.isNotEmpty) {
       result = result.where((line) {
-        return line['name'].toString().toLowerCase().contains(query) ||
-            line['from'].toString().toLowerCase().contains(query) ||
-            line['to'].toString().toLowerCase().contains(query);
+        final name = line['name'].toString().toLowerCase();
+        final from = line['from'].toString().toLowerCase();
+        final to = line['to'].toString().toLowerCase();
+
+        return name.contains(query) ||
+            from.contains(query) ||
+            to.contains(query);
       }).toList();
     }
 
     return result;
   }
 
-  // ============================================================
-  // LIFECYCLE
-  // ============================================================
-
   @override
   void dispose() {
-    _searchController.dispose();
+    searchController.dispose();
     super.dispose();
   }
 
@@ -175,10 +178,6 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: background,
-
-      // IMPORTANT :
-      // Aucun bottomNavigationBar ici.
-      // Ta navigation principale existe déjà ailleurs.
       body: SafeArea(
         child: Column(
           children: [
@@ -187,20 +186,27 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(
+                  16,
                   12,
-                  8,
-                  12,
-                  24,
+                  16,
+                  110,
                 ),
                 child: Column(
                   children: [
                     _buildSearch(),
-                    const SizedBox(height: 10),
+
+                    const SizedBox(height: 14),
+
                     _buildFilters(),
-                    const SizedBox(height: 12),
-                    ..._filteredLines.map(
-                      _buildLineCard,
-                    ),
+
+                    const SizedBox(height: 16),
+
+                    // IMPORTANT :
+                    // Pas de "Lignes disponibles"
+                    // Pas de "7 lignes"
+                    ...filteredLines.map(_buildLineCard),
+
+                    if (filteredLines.isEmpty) _buildEmpty(),
                   ],
                 ),
               ),
@@ -216,53 +222,74 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   // ============================================================
 
   Widget _buildHeader() {
-    return SizedBox(
-      height: 58,
-      child: Row(
-        children: [
-          const SizedBox(width: 10),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        16,
+        8,
+        16,
+        4,
+      ),
+      child: SizedBox(
+        height: 56,
+        child: Row(
+          children: [
+            _buildBackButton(),
 
-          // Retour
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(
-                color: border,
-              ),
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: darkText,
-                size: 21,
-              ),
-              onPressed: () {
-                Navigator.pop(context);
-              },
-            ),
-          ),
-
-          // Titre parfaitement centré
-          const Expanded(
-            child: Center(
-              child: Text(
-                'Lignes de bus',
-                style: TextStyle(
-                  color: darkText,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
+            const Expanded(
+              child: Center(
+                child: Text(
+                  'Lignes de bus',
+                  style: TextStyle(
+                    color: darkText,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Même largeur que le bouton gauche
-          const SizedBox(width: 50),
+            // Pour garder le titre parfaitement centré.
+            const SizedBox(width: 48),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // BACK BUTTON
+  // ============================================================
+
+  Widget _buildBackButton() {
+    return Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: border,
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.035),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
         ],
+      ),
+      child: IconButton(
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        padding: EdgeInsets.zero,
+        icon: const Icon(
+          Icons.arrow_back_rounded,
+          color: darkText,
+          size: 22,
+        ),
       ),
     );
   }
@@ -273,47 +300,58 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
 
   Widget _buildSearch() {
     return Container(
-      height: 48,
+      height: 58,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(17),
         border: Border.all(
           color: border,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.018),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: TextField(
-        controller: _searchController,
+        controller: searchController,
         onChanged: (_) {
           setState(() {});
         },
+        textInputAction: TextInputAction.search,
         style: const TextStyle(
           color: darkText,
-          fontSize: 12,
+          fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
         decoration: InputDecoration(
           border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 18,
+          ),
           prefixIcon: const Icon(
             Icons.search_rounded,
-            color: Color(0xFF94A3B8),
-            size: 20,
+            color: Color(0xFF8A99AE),
+            size: 23,
           ),
           hintText: 'Rechercher une ligne',
           hintStyle: const TextStyle(
-            color: Color(0xFF94A3B8),
-            fontSize: 11.5,
+            color: Color(0xFF9AA7BA),
+            fontSize: 13.5,
             fontWeight: FontWeight.w600,
           ),
-          suffixIcon: _searchController.text.isNotEmpty
+          suffixIcon: searchController.text.isNotEmpty
               ? IconButton(
                   onPressed: () {
-                    _searchController.clear();
+                    searchController.clear();
                     setState(() {});
                   },
                   icon: const Icon(
                     Icons.close_rounded,
-                    size: 17,
                     color: mutedText,
+                    size: 19,
                   ),
                 )
               : null,
@@ -335,39 +373,51 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
     ];
 
     return SizedBox(
-      height: 35,
+      height: 42,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         itemCount: filters.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 7),
+        separatorBuilder: (_, __) {
+          return const SizedBox(width: 8);
+        },
         itemBuilder: (context, index) {
-          final selected = _selectedFilter == index;
+          final bool selected = selectedFilter == index;
 
           return GestureDetector(
             onTap: () {
               setState(() {
-                _selectedFilter = index;
+                selectedFilter = index;
               });
             },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
               padding: const EdgeInsets.symmetric(
-                horizontal: 14,
+                horizontal: 17,
               ),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: selected ? primaryBlue : Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(13),
                 border: Border.all(
                   color: selected ? primaryBlue : border,
                 ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: primaryBlue.withOpacity(0.18),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
               ),
               child: Text(
                 filters[index],
                 style: TextStyle(
-                  color: selected ? Colors.white : mutedText,
-                  fontSize: 9.5,
+                  color: selected ? Colors.white : const Color(0xFF718096),
+                  fontSize: 11.5,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -392,21 +442,29 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
     final Color crowdBackground = _crowdBackground(crowdLevel);
 
     return Container(
-      height: 68,
       margin: const EdgeInsets.only(
-        bottom: 7,
+        bottom: 10,
       ),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: border,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.025),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(18),
+          splashColor: primaryBlue.withOpacity(0.04),
+          highlightColor: primaryBlue.withOpacity(0.02),
           onTap: () {
             Navigator.push(
               context,
@@ -419,42 +477,48 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: 8,
-              vertical: 7,
+              horizontal: 10,
+              vertical: 10,
             ),
             child: Row(
               children: [
-                // --------------------------------------------
-                // NUMERO DE LIGNE
-                // --------------------------------------------
+                // ==================================================
+                // LINE NUMBER
+                // ==================================================
 
                 Container(
-                  width: 34,
-                  height: 34,
+                  width: 46,
+                  height: 46,
                   decoration: BoxDecoration(
                     color: primaryBlue,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(13),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryBlue.withOpacity(0.18),
+                        blurRadius: 9,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   alignment: Alignment.center,
                   child: Text(
                     line['name'].toString(),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 13,
+                      fontSize: 17,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                 ),
 
-                const SizedBox(width: 9),
+                const SizedBox(width: 12),
 
-                // --------------------------------------------
-                // DEPART → ARRIVEE + AFFLUENCE
-                // --------------------------------------------
+                // ==================================================
+                // ROUTE
+                // ==================================================
 
                 Expanded(
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
@@ -466,21 +530,20 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: darkText,
-                                fontSize: 10.5,
+                                fontSize: 12.8,
                                 fontWeight: FontWeight.w800,
+                                letterSpacing: -0.2,
                               ),
                             ),
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(
-                              horizontal: 5,
+                              horizontal: 6,
                             ),
                             child: Icon(
                               Icons.arrow_forward_rounded,
-                              color: Color(
-                                0xFF64748B,
-                              ),
-                              size: 12,
+                              size: 15,
+                              color: Color(0xFF7B8BA1),
                             ),
                           ),
                           Flexible(
@@ -490,37 +553,44 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 color: darkText,
-                                fontSize: 10.5,
+                                fontSize: 12.8,
                                 fontWeight: FontWeight.w800,
+                                letterSpacing: -0.2,
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+
+                      const SizedBox(height: 7),
+
+                      // ==================================================
+                      // CROWD BADGE
+                      // ==================================================
+
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
+                          horizontal: 7,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
                           color: crowdBackground,
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(7),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
                               Icons.people_alt_rounded,
+                              size: 11,
                               color: crowdColor,
-                              size: 8,
                             ),
-                            const SizedBox(width: 3),
+                            const SizedBox(width: 4),
                             Text(
                               line['crowd'].toString(),
                               style: TextStyle(
                                 color: crowdColor,
-                                fontSize: 7.5,
+                                fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -531,38 +601,73 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                   ),
                 ),
 
-                const SizedBox(width: 5),
+                const SizedBox(width: 8),
 
-                // --------------------------------------------
-                // BUS
-                // --------------------------------------------
+// ==================================================
+// ACTIONS : FAVORI + BUS + CHEVRON
+// ==================================================
 
-                Container(
-                  width: 49,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    color: const Color(
-                      0xFFF4F7FB,
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // ❤️ FAVORI
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          line['favorite'] = !(line['favorite'] ?? false);
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          color: line['favorite'] == true
+                              ? const Color(0xFFFFF1F2)
+                              : Colors.transparent,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          line['favorite'] == true
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          color: line['favorite'] == true
+                              ? const Color(0xFFEF4444)
+                              : const Color(0xFF718096),
+                          size: 19,
+                        ),
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.directions_bus_filled_rounded,
-                    color: darkText,
-                    size: 26,
-                  ),
+
+                    const SizedBox(height: 2),
+
+                    // 🚌 BUS
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F6FA),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: const Icon(
+                        Icons.directions_bus_filled_rounded,
+                        color: darkText,
+                        size: 28,
+                      ),
+                    ),
+                  ],
                 ),
 
-                const SizedBox(width: 2),
+                const SizedBox(width: 3),
 
-                // --------------------------------------------
-                // CHEVRON
-                // --------------------------------------------
+// ==================================================
+// CHEVRON
+// ==================================================
 
                 const Icon(
                   Icons.chevron_right_rounded,
-                  color: mutedText,
-                  size: 19,
+                  color: Color(0xFF718096),
+                  size: 22,
                 ),
               ],
             ),
@@ -580,8 +685,10 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
     switch (level) {
       case 1:
         return const Color(0xFFF59E0B);
+
       case 2:
         return const Color(0xFFEF4444);
+
       default:
         return const Color(0xFF16A34A);
     }
@@ -590,11 +697,189 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   Color _crowdBackground(int level) {
     switch (level) {
       case 1:
-        return const Color(0xFFFFF5DF);
+        return const Color(0xFFFFF4DB);
+
       case 2:
-        return const Color(0xFFFFEAEA);
+        return const Color(0xFFFFE9E9);
+
       default:
         return const Color(0xFFEAF8F0);
     }
+  }
+
+  // ============================================================
+  // EMPTY STATE
+  // ============================================================
+
+  Widget _buildEmpty() {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(
+        top: 8,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 32,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: border,
+        ),
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            color: Color(0xFF94A3B8),
+            size: 34,
+          ),
+          SizedBox(height: 10),
+          Text(
+            'Aucune ligne trouvée',
+            style: TextStyle(
+              color: darkText,
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: 4),
+          Text(
+            'Essayez une autre recherche.',
+            style: TextStyle(
+              color: mutedText,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // BOTTOM NAVIGATION
+  // ============================================================
+
+  Widget _buildBottomNavigationBar() {
+    return SafeArea(
+      top: false,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(
+          12,
+          0,
+          12,
+          12,
+        ),
+        height: 68,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(27),
+          border: Border.all(
+            color: border,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 22,
+              offset: const Offset(0, 7),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _navItem(
+              icon: Icons.home_rounded,
+              label: 'Accueil',
+              selected: false,
+              onTap: () {
+                Navigator.pop(context);
+              },
+            ),
+
+            _navItem(
+              icon: Icons.directions_bus_rounded,
+              label: 'Bus',
+              selected: true,
+              onTap: () {},
+            ),
+
+            // ==================================================
+            // QR CENTER BUTTON
+            // ==================================================
+
+            GestureDetector(
+              onTap: () {},
+              child: Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: primaryBlue,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryBlue.withOpacity(0.28),
+                      blurRadius: 14,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: Colors.white,
+                  size: 23,
+                ),
+              ),
+            ),
+
+            _navItem(
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Wallet',
+              selected: false,
+              onTap: () {},
+            ),
+
+            _navItem(
+              icon: Icons.person_rounded,
+              label: 'Profil',
+              selected: false,
+              onTap: () {},
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // NAV ITEM
+  // ============================================================
+
+  Widget _navItem({
+    required IconData icon,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 11,
+          vertical: 7,
+        ),
+        decoration: BoxDecoration(
+          color: selected ? const Color(0xFFE7EEFF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Icon(
+          icon,
+          color: selected ? primaryBlue : const Color(0xFF64748B),
+          size: 23,
+        ),
+      ),
+    );
   }
 }
