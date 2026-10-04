@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'bus_line_detail_screen.dart';
 
 class BusLinesScreen extends StatefulWidget {
@@ -28,147 +29,17 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   int selectedFilter = 0;
 
   // ============================================================
-  // BUS LINES
+  // FAVORITES
   // ============================================================
 
-  final List<Map<String, dynamic>> lines = [
-    {
-      'name': '3',
-      'from': 'Cité 1200 Logts',
-      'to': 'Centre-ville',
-      'start': 'Cité 1200 Logts',
-      'end': 'Centre-ville',
-      'crowd': 'Faible affluence',
-      'crowdLevel': 0,
-      'nextArrival': 'Prochain : 3 min',
-      'next': '3 min',
-      'stopsCount': 8,
-      'busesCount': 3,
-      'favorite': false,
-    },
-    {
-      'name': '10',
-      'from': 'Gare Routière',
-      'to': 'Centre-ville',
-      'start': 'Gare Routière',
-      'end': 'Centre-ville',
-      'crowd': 'Faible affluence',
-      'crowdLevel': 0,
-      'nextArrival': 'Prochain : 5 min',
-      'next': '5 min',
-      'stopsCount': 10,
-      'busesCount': 4,
-      'favorite': false,
-    },
-    {
-      'name': '18',
-      'from': 'Aïn Bessem',
-      'to': 'Université',
-      'start': 'Aïn Bessem',
-      'end': 'Université',
-      'crowd': 'Moyenne affluence',
-      'crowdLevel': 1,
-      'nextArrival': 'Prochain : 7 min',
-      'next': '7 min',
-      'stopsCount': 12,
-      'busesCount': 3,
-      'favorite': false,
-    },
-    {
-      'name': '21',
-      'from': "M'Chedallah",
-      'to': 'Gare Ferroviaire',
-      'start': "M'Chedallah",
-      'end': 'Gare Ferroviaire',
-      'crowd': 'Élevée affluence',
-      'crowdLevel': 2,
-      'nextArrival': 'Prochain : 4 min',
-      'next': '4 min',
-      'stopsCount': 9,
-      'busesCount': 5,
-      'favorite': false,
-    },
-    {
-      'name': '22',
-      'from': 'Bitam',
-      'to': 'Centre-ville',
-      'start': 'Bitam',
-      'end': 'Centre-ville',
-      'crowd': 'Faible affluence',
-      'crowdLevel': 0,
-      'nextArrival': 'Prochain : 8 min',
-      'next': '8 min',
-      'stopsCount': 11,
-      'busesCount': 3,
-      'favorite': false,
-    },
-    {
-      'name': '23',
-      'from': 'Haïzer',
-      'to': 'Université',
-      'start': 'Haïzer',
-      'end': 'Université',
-      'crowd': 'Moyenne affluence',
-      'crowdLevel': 1,
-      'nextArrival': 'Prochain : 6 min',
-      'next': '6 min',
-      'stopsCount': 10,
-      'busesCount': 4,
-      'favorite': false,
-    },
-    {
-      'name': '24',
-      'from': 'Boukram',
-      'to': 'Gare Routière',
-      'start': 'Boukram',
-      'end': 'Gare Routière',
-      'crowd': 'Faible affluence',
-      'crowdLevel': 0,
-      'nextArrival': 'Prochain : 9 min',
-      'next': '9 min',
-      'stopsCount': 7,
-      'busesCount': 2,
-      'favorite': false,
-    },
-  ];
+  final Map<String, bool> favorites = {};
 
   // ============================================================
-  // FILTERED LINES
+  // FIRESTORE
   // ============================================================
 
-  List<Map<String, dynamic>> get filteredLines {
-    List<Map<String, dynamic>> result = List<Map<String, dynamic>>.from(lines);
-
-    if (selectedFilter == 1) {
-      result = result.where((line) => line['crowdLevel'] == 0).toList();
-    } else if (selectedFilter == 2) {
-      result = result.where((line) => line['crowdLevel'] == 1).toList();
-    } else if (selectedFilter == 3) {
-      result = result.where((line) => line['crowdLevel'] == 2).toList();
-    }
-
-    final query = searchController.text.trim().toLowerCase();
-
-    if (query.isNotEmpty) {
-      result = result.where((line) {
-        final name = line['name'].toString().toLowerCase();
-        final from = line['from'].toString().toLowerCase();
-        final to = line['to'].toString().toLowerCase();
-
-        return name.contains(query) ||
-            from.contains(query) ||
-            to.contains(query);
-      }).toList();
-    }
-
-    return result;
-  }
-
-  @override
-  void dispose() {
-    searchController.dispose();
-    super.dispose();
-  }
+  final CollectionReference<Map<String, dynamic>> linesCollection =
+      FirebaseFirestore.instance.collection('ligne');
 
   // ============================================================
   // BUILD
@@ -183,38 +54,286 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
           children: [
             _buildHeader(),
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  16,
-                  12,
-                  16,
-                  110,
-                ),
-                child: Column(
-                  children: [
-                    _buildSearch(),
+              child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: linesCollection.snapshots(),
+                builder: (context, snapshot) {
+                  // ==================================================
+                  // LOADING
+                  // ==================================================
 
-                    const SizedBox(height: 14),
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: primaryBlue,
+                      ),
+                    );
+                  }
 
-                    _buildFilters(),
+                  // ==================================================
+                  // ERROR
+                  // ==================================================
 
-                    const SizedBox(height: 16),
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.error_outline_rounded,
+                              color: Colors.red,
+                              size: 42,
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Erreur de chargement',
+                              style: TextStyle(
+                                color: darkText,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '${snapshot.error}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: mutedText,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }
 
-                    // IMPORTANT :
-                    // Pas de "Lignes disponibles"
-                    // Pas de "7 lignes"
-                    ...filteredLines.map(_buildLineCard),
+                  // ==================================================
+                  // NO DATA
+                  // ==================================================
 
-                    if (filteredLines.isEmpty) _buildEmpty(),
-                  ],
-                ),
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(
+                            16,
+                            12,
+                            16,
+                            0,
+                          ),
+                          child: _buildSearch(),
+                        ),
+                        const SizedBox(height: 14),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                          ),
+                          child: _buildFilters(),
+                        ),
+                        Expanded(
+                          child: _buildNoLines(),
+                        ),
+                      ],
+                    );
+                  }
+
+                  // ==================================================
+                  // FIRESTORE DATA
+                  // ==================================================
+
+                  final List<Map<String, dynamic>> lines =
+                      snapshot.data!.docs.map((doc) {
+                    final Map<String, dynamic> data = doc.data();
+
+                    // ------------------------------------------------
+                    // NOM / NUMÉRO
+                    // ------------------------------------------------
+
+                    final String name = data['nom']?.toString() ?? doc.id;
+
+                    // ------------------------------------------------
+                    // DÉPART
+                    // ------------------------------------------------
+
+                    final String from =
+                        data['depart']?.toString() ?? 'Départ inconnu';
+
+                    // ------------------------------------------------
+                    // ARRIVÉE
+                    // ------------------------------------------------
+
+                    final String to =
+                        data['destination']?.toString() ?? 'Arrivée inconnue';
+
+                    // ------------------------------------------------
+                    // FRÉQUENCE
+                    // ------------------------------------------------
+
+                    final String frequency =
+                        data['statu']?.toString() ?? 'Faible';
+
+                    final int frequencyLevel = _getFrequencyLevel(frequency);
+
+                    // ------------------------------------------------
+                    // FAVORI
+                    // ------------------------------------------------
+
+                    favorites.putIfAbsent(
+                      doc.id,
+                      () => false,
+                    );
+
+                    return {
+                      'id': doc.id,
+                      'name': name,
+                      'from': from,
+                      'to': to,
+                      'distance': data['distance'],
+                      'duree': data['duree'],
+                      'nb_arrets': data['nb_arrets'],
+                      'nb_bus': data['nb_bus'],
+                      'status': frequency,
+                      'frequency': frequency,
+                      'favorite': favorites[doc.id] ?? false,
+                      'frequencyText': _getFrequencyText(frequencyLevel),
+                      'frequencyLevel': frequencyLevel,
+                    };
+                  }).toList();
+
+                  // ==================================================
+                  // FILTER
+                  // ==================================================
+
+                  List<Map<String, dynamic>> filteredLines =
+                      List<Map<String, dynamic>>.from(lines);
+
+                  // Fréquence élevée
+                  if (selectedFilter == 1) {
+                    filteredLines = filteredLines
+                        .where(
+                          (line) => line['frequencyLevel'] == 2,
+                        )
+                        .toList();
+                  }
+
+                  // Fréquence moyenne
+                  else if (selectedFilter == 2) {
+                    filteredLines = filteredLines
+                        .where(
+                          (line) => line['frequencyLevel'] == 1,
+                        )
+                        .toList();
+                  }
+
+                  // Fréquence faible
+                  else if (selectedFilter == 3) {
+                    filteredLines = filteredLines
+                        .where(
+                          (line) => line['frequencyLevel'] == 0,
+                        )
+                        .toList();
+                  }
+
+                  // ==================================================
+                  // SEARCH
+                  // ==================================================
+
+                  final String query =
+                      searchController.text.trim().toLowerCase();
+
+                  if (query.isNotEmpty) {
+                    filteredLines = filteredLines.where((line) {
+                      final String name = line['name'].toString().toLowerCase();
+
+                      final String from = line['from'].toString().toLowerCase();
+
+                      final String to = line['to'].toString().toLowerCase();
+
+                      return name.contains(query) ||
+                          from.contains(query) ||
+                          to.contains(query);
+                    }).toList();
+                  }
+
+                  // ==================================================
+                  // CONTENT
+                  // ==================================================
+
+                  return SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      12,
+                      16,
+                      110,
+                    ),
+                    child: Column(
+                      children: [
+                        _buildSearch(),
+                        const SizedBox(height: 14),
+                        _buildFilters(),
+                        const SizedBox(height: 16),
+                        ...filteredLines.map(
+                          _buildLineCard,
+                        ),
+                        if (filteredLines.isEmpty) _buildEmpty(),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // ============================================================
+  // FREQUENCY LEVEL
+  // ============================================================
+
+  int _getFrequencyLevel(String value) {
+    final String normalized = value
+        .trim()
+        .toLowerCase()
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('à', 'a');
+
+    if (normalized.contains('eleve') ||
+        normalized.contains('high') ||
+        normalized.contains('forte')) {
+      return 2;
+    }
+
+    if (normalized.contains('moyenne') ||
+        normalized.contains('moyen') ||
+        normalized.contains('medium')) {
+      return 1;
+    }
+
+    return 0;
+  }
+
+  // ============================================================
+  // FREQUENCY TEXT
+  // ============================================================
+
+  String _getFrequencyText(int level) {
+    switch (level) {
+      case 2:
+        return ' élevée';
+
+      case 1:
+        return ' moyenne';
+
+      default:
+        return ' faible';
+    }
   }
 
   // ============================================================
@@ -234,7 +353,6 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
         child: Row(
           children: [
             _buildBackButton(),
-
             const Expanded(
               child: Center(
                 child: Text(
@@ -248,8 +366,6 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                 ),
               ),
             ),
-
-            // Pour garder le titre parfaitement centré.
             const SizedBox(width: 48),
           ],
         ),
@@ -365,11 +481,11 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   // ============================================================
 
   Widget _buildFilters() {
-    const filters = [
+    const List<String> filters = [
       'Toutes',
-      'Faible affluence',
-      'Moyenne',
-      'Élevée',
+      'Fréquence élevée',
+      'Fréquence moyenne',
+      'Fréquence faible',
     ];
 
     return SizedBox(
@@ -379,7 +495,9 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
         physics: const BouncingScrollPhysics(),
         itemCount: filters.length,
         separatorBuilder: (_, __) {
-          return const SizedBox(width: 8);
+          return const SizedBox(
+            width: 8,
+          );
         },
         itemBuilder: (context, index) {
           final bool selected = selectedFilter == index;
@@ -391,7 +509,9 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
               });
             },
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
+              duration: const Duration(
+                milliseconds: 180,
+              ),
               curve: Curves.easeOut,
               padding: const EdgeInsets.symmetric(
                 horizontal: 17,
@@ -406,9 +526,14 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                 boxShadow: selected
                     ? [
                         BoxShadow(
-                          color: primaryBlue.withOpacity(0.18),
+                          color: primaryBlue.withOpacity(
+                            0.18,
+                          ),
                           blurRadius: 10,
-                          offset: const Offset(0, 4),
+                          offset: const Offset(
+                            0,
+                            4,
+                          ),
                         ),
                       ]
                     : null,
@@ -435,11 +560,11 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   Widget _buildLineCard(
     Map<String, dynamic> line,
   ) {
-    final int crowdLevel = line['crowdLevel'] as int;
+    final int frequencyLevel = line['frequencyLevel'] as int;
 
-    final Color crowdColor = _crowdColor(crowdLevel);
+    final Color frequencyColor = _frequencyColor(frequencyLevel);
 
-    final Color crowdBackground = _crowdBackground(crowdLevel);
+    final Color frequencyBackground = _frequencyBackground(frequencyLevel);
 
     return Container(
       margin: const EdgeInsets.only(
@@ -502,10 +627,12 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    line['name'].toString(),
+                    _formatLineNumber(
+                      line['name'].toString(),
+                    ),
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 17,
+                      fontSize: 15,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -565,7 +692,7 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                       const SizedBox(height: 7),
 
                       // ==================================================
-                      // CROWD BADGE
+                      // FREQUENCY
                       // ==================================================
 
                       Container(
@@ -574,22 +701,22 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: crowdBackground,
+                          color: frequencyBackground,
                           borderRadius: BorderRadius.circular(7),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Icon(
-                              Icons.people_alt_rounded,
+                              Icons.schedule_rounded,
                               size: 11,
-                              color: crowdColor,
+                              color: frequencyColor,
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              line['crowd'].toString(),
+                              line['frequencyText'].toString(),
                               style: TextStyle(
-                                color: crowdColor,
+                                color: frequencyColor,
                                 fontSize: 9.5,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -603,22 +730,28 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
 
                 const SizedBox(width: 8),
 
-// ==================================================
-// ACTIONS : FAVORI + BUS + CHEVRON
-// ==================================================
+                // ==================================================
+                // ACTIONS
+                // ==================================================
 
                 Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // ❤️ FAVORI
+                    // FAVORI
                     GestureDetector(
                       onTap: () {
+                        final String id = line['id'].toString();
+
                         setState(() {
-                          line['favorite'] = !(line['favorite'] ?? false);
+                          favorites[id] = !(favorites[id] ?? false);
+
+                          line['favorite'] = favorites[id];
                         });
                       },
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
+                        duration: const Duration(
+                          milliseconds: 180,
+                        ),
                         width: 34,
                         height: 34,
                         decoration: BoxDecoration(
@@ -641,7 +774,7 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
 
                     const SizedBox(height: 2),
 
-                    // 🚌 BUS
+                    // BUS
                     Container(
                       width: 50,
                       height: 50,
@@ -660,9 +793,9 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
 
                 const SizedBox(width: 3),
 
-// ==================================================
-// CHEVRON
-// ==================================================
+                // ==================================================
+                // CHEVRON
+                // ==================================================
 
                 const Icon(
                   Icons.chevron_right_rounded,
@@ -678,45 +811,53 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   }
 
   // ============================================================
-  // CROWD COLORS
+  // FORMAT LINE NUMBER
   // ============================================================
 
-  Color _crowdColor(int level) {
+  String _formatLineNumber(String name) {
+    final RegExpMatch? match = RegExp(r'\d+').firstMatch(name);
+
+    if (match != null) {
+      return match.group(0)!;
+    }
+
+    return name;
+  }
+
+  // ============================================================
+  // FREQUENCY COLORS
+  // ============================================================
+
+  Color _frequencyColor(int level) {
     switch (level) {
-      case 1:
-        return const Color(0xFFF59E0B);
-
       case 2:
-        return const Color(0xFFEF4444);
-
+        return const Color(0xFF16A34A); // Vert
+      case 1:
+        return const Color(0xFFF59E0B); // Orange
       default:
-        return const Color(0xFF16A34A);
+        return const Color(0xFFEF4444); // Rouge
     }
   }
 
-  Color _crowdBackground(int level) {
+  Color _frequencyBackground(int level) {
     switch (level) {
+      case 2:
+        return const Color(0xFFEAF8F0);
       case 1:
         return const Color(0xFFFFF4DB);
-
-      case 2:
-        return const Color(0xFFFFE9E9);
-
       default:
-        return const Color(0xFFEAF8F0);
+        return const Color(0xFFFFE9E9);
     }
   }
 
   // ============================================================
-  // EMPTY STATE
+  // EMPTY SEARCH
   // ============================================================
 
   Widget _buildEmpty() {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(
-        top: 8,
-      ),
+      margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(
         horizontal: 24,
         vertical: 32,
@@ -758,93 +899,38 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   }
 
   // ============================================================
-  // BOTTOM NAVIGATION
+  // NO LINES IN FIRESTORE
   // ============================================================
 
-  Widget _buildBottomNavigationBar() {
-    return SafeArea(
-      top: false,
-      child: Container(
-        margin: const EdgeInsets.fromLTRB(
-          12,
-          0,
-          12,
-          12,
-        ),
-        height: 68,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(27),
-          border: Border.all(
-            color: border,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 22,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+  Widget _buildNoLines() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _navItem(
-              icon: Icons.home_rounded,
-              label: 'Accueil',
-              selected: false,
-              onTap: () {
-                Navigator.pop(context);
-              },
+            const Icon(
+              Icons.directions_bus_outlined,
+              color: Color(0xFF94A3B8),
+              size: 48,
             ),
-
-            _navItem(
-              icon: Icons.directions_bus_rounded,
-              label: 'Bus',
-              selected: true,
-              onTap: () {},
-            ),
-
-            // ==================================================
-            // QR CENTER BUTTON
-            // ==================================================
-
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: primaryBlue,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: primaryBlue.withOpacity(0.28),
-                      blurRadius: 14,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.qr_code_scanner_rounded,
-                  color: Colors.white,
-                  size: 23,
-                ),
+            const SizedBox(height: 14),
+            const Text(
+              'Aucune ligne disponible',
+              style: TextStyle(
+                color: darkText,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
               ),
             ),
-
-            _navItem(
-              icon: Icons.account_balance_wallet_rounded,
-              label: 'Wallet',
-              selected: false,
-              onTap: () {},
-            ),
-
-            _navItem(
-              icon: Icons.person_rounded,
-              label: 'Profil',
-              selected: false,
-              onTap: () {},
+            const SizedBox(height: 6),
+            const Text(
+              'Ajoutez des lignes dans Firestore.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: mutedText,
+                fontSize: 12,
+              ),
             ),
           ],
         ),
@@ -853,33 +939,12 @@ class _BusLinesScreenState extends State<BusLinesScreen> {
   }
 
   // ============================================================
-  // NAV ITEM
+  // DISPOSE
   // ============================================================
 
-  Widget _navItem({
-    required IconData icon,
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 11,
-          vertical: 7,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFE7EEFF) : Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Icon(
-          icon,
-          color: selected ? primaryBlue : const Color(0xFF64748B),
-          size: 23,
-        ),
-      ),
-    );
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
   }
 }

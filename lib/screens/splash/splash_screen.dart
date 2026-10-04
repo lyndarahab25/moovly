@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -97,15 +98,29 @@ class _SplashScreenState extends State<SplashScreen>
     // ------------------------------------------------------------
     // GO TO LOGIN
     // ------------------------------------------------------------
+    _checkAuthState();
+  }
 
-    Timer(const Duration(milliseconds: 3200), () {
-      if (!mounted) return;
+  Future<void> _checkAuthState() async {
+    await Future.delayed(const Duration(milliseconds: 3200));
 
+    if (!mounted) return;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    debugPrint('🔥 Firebase user: ${user?.email}');
+
+    if (user != null) {
+      Navigator.pushReplacementNamed(
+        context,
+        '/home',
+      );
+    } else {
       Navigator.pushReplacementNamed(
         context,
         '/login',
       );
-    });
+    }
   }
 
   Future<void> _startAnimation() async {
@@ -151,11 +166,14 @@ class _SplashScreenState extends State<SplashScreen>
                 scale: _logoScale,
                 child: FadeTransition(
                   opacity: _logoOpacity,
-                  child: Image.asset(
-                    'assets/images/moovly_logo.png',
-                    width: 220,
-                    height: 170,
-                    fit: BoxFit.contain,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 300,
+                      height: 180,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
               ),

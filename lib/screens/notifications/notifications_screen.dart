@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -26,109 +28,203 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   String selectedTab = 'Toutes';
 
-  final List<MoovlyNotification> notifications = [
-    MoovlyNotification(
-      id: '1',
-      icon: Icons.warning_rounded,
-      title: 'Retard sur la ligne A',
-      subtitle: 'Retard de 10 min sur la ligne A à 08:20.',
-      time: 'Maintenant',
-      color: red,
-      category: 'Alertes',
-      unread: true,
-    ),
-    MoovlyNotification(
-      id: '2',
-      icon: Icons.directions_bus_rounded,
-      title: 'Plus de bus disponibles',
-      subtitle: 'Plus de bus sont disponibles sur la ligne 12.',
-      time: 'Il y a 1h',
-      color: primaryBlue,
-      category: 'Infos',
-      unread: true,
-    ),
-    MoovlyNotification(
-      id: '3',
-      icon: Icons.check_circle_rounded,
-      title: 'Paiement réussi',
-      subtitle: 'Votre paiement de 50 DA a été effectué avec succès.',
-      time: 'Il y a 2h',
-      color: green,
-      category: 'Infos',
-      unread: false,
-    ),
-    MoovlyNotification(
-      id: '4',
-      icon: Icons.build_rounded,
-      title: 'Maintenance prévue',
-      subtitle: 'Maintenance prévue sur la ligne C de 00:00 à 04:00.',
-      time: 'Hier',
-      color: purple,
-      category: 'Alertes',
-      unread: false,
-    ),
-    MoovlyNotification(
-      id: '5',
-      icon: Icons.local_offer_rounded,
-      title: 'Offre spéciale Premium',
-      subtitle: 'Profitez d’une réduction sur votre prochain abonnement.',
-      time: 'Hier',
-      color: orange,
-      category: 'Offres',
-      unread: false,
-    ),
-    MoovlyNotification(
-      id: '6',
-      icon: Icons.directions_bus_rounded,
-      title: 'Bus en approche',
-      subtitle: 'Votre bus ligne B arrive dans 3 min à l’arrêt Université.',
-      time: 'Il y a 3h',
-      color: primaryBlue,
-      category: 'Alertes',
-      unread: false,
-    ),
-    MoovlyNotification(
-      id: '7',
-      icon: Icons.star_rounded,
-      title: 'Abonnement renouvelé',
-      subtitle: 'Votre abonnement Premium est valable jusqu’au 31/08.',
-      time: 'Il y a 2j',
-      color: orange,
-      category: 'Offres',
-      unread: false,
-    ),
-  ];
-
   // ============================================================
-  // FILTER
+  // FIREBASE
   // ============================================================
 
-  List<MoovlyNotification> get filteredNotifications {
-    if (selectedTab == 'Toutes') {
-      return notifications;
+  User? get _currentUser {
+    return FirebaseAuth.instance.currentUser;
+  }
+
+Stream<QuerySnapshot<Map<String, dynamic>>> get _notificationsStream {
+  return FirebaseFirestore.instance
+      .collection('notifications')
+      .snapshots();
+}
+  // ============================================================
+  // ICON DE LA NOTIFICATION
+  // ============================================================
+
+  IconData _getNotificationIcon(dynamic type) {
+    switch (type?.toString()) {
+      case 'alerte':
+      case 'alert':
+      case 'retard':
+        return Icons.warning_rounded;
+
+      case 'bus':
+        return Icons.directions_bus_rounded;
+
+      case 'paiement':
+        return Icons.check_circle_rounded;
+      case 'recharge':
+        return Icons.account_balance_wallet_rounded;
+
+      case 'maintenance':
+        return Icons.build_rounded;
+
+      case 'offre':
+      case 'promotion':
+        return Icons.local_offer_rounded;
+
+      case 'abonnement':
+        return Icons.star_rounded;
+
+      default:
+        return Icons.notifications_rounded;
+    }
+  }
+
+  // ============================================================
+  // COULEUR DE LA NOTIFICATION
+  // ============================================================
+
+  Color _getNotificationColor(dynamic type) {
+    switch (type?.toString()) {
+      case 'alerte':
+      case 'alert':
+      case 'retard':
+        return red;
+
+      case 'bus':
+        return primaryBlue;
+
+      case 'paiement':
+        return green;
+
+      case 'recharge':
+      return green;
+
+      case 'maintenance':
+        return purple;
+
+      case 'offre':
+      case 'promotion':
+        return orange;
+
+      case 'abonnement':
+        return orange;
+
+      default:
+        return primaryBlue;
+    }
+  }
+
+  // ============================================================
+  // CATÉGORIE
+  // ============================================================
+
+  String _getNotificationCategory(dynamic type) {
+    switch (type?.toString()) {
+      case 'alerte':
+      case 'alert':
+      case 'retard':
+      case 'maintenance':
+        return 'Alertes';
+
+      case 'bus':
+      case 'paiement':
+      case 'recharge':
+        return 'Infos';
+
+      case 'offre':
+      case 'promotion':
+      case 'abonnement':
+        return 'Offres';
+
+      default:
+        return 'Infos';
+    }
+  }
+
+  // ============================================================
+  // DATE
+  // ============================================================
+ DateTime? _getNotificationDate(dynamic value) {
+  if (value is Timestamp) {
+    return value.toDate();
+  }
+
+  if (value is DateTime) {
+    return value;
+  }
+
+  return null;
+}
+  String _formatNotificationDate(dynamic value) {
+    if (value == null) {
+      return '';
     }
 
-    return notifications
-        .where((notification) => notification.category == selectedTab)
-        .toList();
-  }
+    DateTime? date;
 
-  int get unreadCount {
-    return notifications.where((notification) => notification.unread).length;
+    if (value is Timestamp) {
+      date = value.toDate();
+    } else if (value is DateTime) {
+      date = value;
+    }
+
+    if (date == null) {
+      return '';
+    }
+
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inMinutes < 1) {
+      return 'Maintenant';
+    }
+
+    if (difference.inMinutes < 60) {
+      return 'Il y a ${difference.inMinutes} min';
+    }
+
+    if (difference.inHours < 24) {
+      return 'Il y a ${difference.inHours}h';
+    }
+
+    if (difference.inDays == 1) {
+      return 'Hier';
+    }
+
+    if (difference.inDays < 7) {
+      return 'Il y a ${difference.inDays}j';
+    }
+
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/'
+        '${date.year}';
   }
 
   // ============================================================
-  // ACTIONS
+  // MARK ALL AS READ
   // ============================================================
 
-  void markAllRead() {
+  Future<void> markAllRead(
+    List<MoovlyNotification> notifications,
+  ) async {
     HapticFeedback.lightImpact();
 
-    setState(() {
-      for (final notification in notifications) {
-        notification.unread = false;
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (final notification in notifications) {
+      if (notification.unread) {
+        final reference = FirebaseFirestore.instance
+            .collection('notifications')
+            .doc(notification.id);
+
+        batch.update(
+          reference,
+          {
+            'lu': true,
+          },
+        );
       }
-    });
+    }
+
+    await batch.commit();
+
+    if (!mounted) return;
 
     _showMessage(
       'Toutes les notifications ont été marquées comme lues.',
@@ -137,30 +233,43 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  void markAsRead(String id) {
-    setState(() {
-      final notification =
-          notifications.firstWhere((notification) => notification.id == id);
+  // ============================================================
+  // MARK AS READ
+  // ============================================================
 
-      notification.unread = false;
+  Future<void> markAsRead(String id) async {
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(id)
+        .update({
+      'lu': true,
     });
   }
 
-  void deleteNotification(String id) {
+  // ============================================================
+  // DELETE
+  // ============================================================
+
+  Future<void> deleteNotification(String id) async {
     HapticFeedback.mediumImpact();
 
-    setState(() {
-      notifications.removeWhere(
-        (notification) => notification.id == id,
-      );
-    });
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(id)
+        .delete();
   }
+
+  // ============================================================
+  // MESSAGE
+  // ============================================================
 
   void _showMessage(
     String message,
     Color color,
     IconData icon,
   ) {
+    if (!mounted) return;
+
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -223,7 +332,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle
                 Container(
                   width: 42,
                   height: 4,
@@ -232,10 +340,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
-                // Icon
                 Container(
                   width: 64,
                   height: 64,
@@ -249,9 +354,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     size: 30,
                   ),
                 ),
-
                 const SizedBox(height: 16),
-
                 Text(
                   notification.title,
                   textAlign: TextAlign.center,
@@ -262,9 +365,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     letterSpacing: -0.3,
                   ),
                 ),
-
                 const SizedBox(height: 9),
-
                 Text(
                   notification.subtitle,
                   textAlign: TextAlign.center,
@@ -274,10 +375,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     height: 1.5,
                   ),
                 ),
-
                 const SizedBox(height: 15),
-
-                // Time + category
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -292,17 +390,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 24),
-
-                // Actions
                 Row(
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                          deleteNotification(notification.id);
-                          Navigator.pop(context);
+                        onPressed: () async {
+                          await deleteNotification(notification.id);
+
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                          }
                         },
                         icon: const Icon(
                           Icons.delete_outline_rounded,
@@ -361,70 +459,247 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final filtered = filteredNotifications;
-
     return Scaffold(
       backgroundColor: bg,
 
-      // IMPORTANT :
       // Aucun bottomNavigationBar ici.
       // Le navbar appartient au HomeScreen.
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            _buildTabs(),
-            Expanded(
-              child: filtered.isEmpty
-                  ? const _EmptyNotifications()
-                  : ListView.builder(
-                      physics: const BouncingScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(
-                        16,
-                        16,
-                        16,
-                        30,
-                      ),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        final notification = filtered[index];
+        child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: _notificationsStream,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: primaryBlue,
+                ),
+              );
+            }
 
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: Dismissible(
-                            key: ValueKey(notification.id),
-                            direction: DismissDirection.endToStart,
-                            onDismissed: (_) {
-                              deleteNotification(notification.id);
-                            },
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 22),
-                              decoration: BoxDecoration(
-                                color: red,
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: const Icon(
-                                Icons.delete_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                            ),
-                            child: _NotificationCard(
-                              notification: notification,
-                              onTap: () {
-                                showNotificationDetail(
-                                  context,
-                                  notification,
-                                );
-                              },
-                            ),
-                          ),
-                        );
-                      },
+            if (snapshot.hasError) {
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'Erreur lors du chargement des notifications.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: darkText,
+                      fontWeight: FontWeight.w600,
                     ),
-            ),
-          ],
+                  ),
+                ),
+              );
+            }
+
+           final docs = snapshot.data?.docs ?? [];
+
+final user = _currentUser;
+
+if (user == null) {
+  return const _EmptyNotifications();
+}
+
+// ======================================================
+// FILTRER LES NOTIFICATIONS DE L'UTILISATEUR
+// ======================================================
+
+final userPath = 'users/${user.uid}';
+
+final userDocs = docs.where((doc) {
+  final data = doc.data();
+
+  // ------------------------------------------------------
+  // FORMAT 1 : id_user = DocumentReference
+  // ------------------------------------------------------
+
+  final idUser = data['id_user'];
+
+  if (idUser is DocumentReference) {
+    if (idUser.path == userPath) {
+      return true;
+    }
+  }
+
+  // ------------------------------------------------------
+  // FORMAT 2 : userId = "users/UID"
+  // ------------------------------------------------------
+
+  final userId = data['userId'];
+
+  if (userId?.toString() == userPath) {
+    return true;
+  }
+
+  // ------------------------------------------------------
+  // FORMAT 3 : userId = UID directement
+  // ------------------------------------------------------
+
+  if (userId?.toString() == user.uid) {
+    return true;
+  }
+
+  return false;
+}).toList();
+
+// ======================================================
+// CONVERSION FIRESTORE → MODEL
+// ======================================================
+
+final allNotifications = userDocs.map((doc) {
+  final data = doc.data();
+
+  return MoovlyNotification(
+    id: doc.id,
+
+    icon: _getNotificationIcon(
+      data['type'],
+    ),
+
+    title: (data['title'] ?? '')
+            .toString()
+            .trim()
+            .isEmpty
+        ? 'Notification'
+        : data['title'].toString(),
+
+    subtitle: (data['message'] ?? '').toString(),
+
+    time: _formatNotificationDate(
+      data['date_envoi'],
+    ),
+
+    color: _getNotificationColor(
+      data['type'],
+    ),
+
+    category: _getNotificationCategory(
+      data['type'],
+    ),
+
+    unread: data['lu'] != true,
+
+    date: _getNotificationDate(
+      data['date_envoi'],
+    ),
+  );
+}).toList();
+
+            // ======================================================
+            // TRI PAR DATE
+            // ======================================================
+
+            allNotifications.sort((a, b) {
+  final dateA = a.date;
+  final dateB = b.date;
+
+  if (dateA == null && dateB == null) {
+    return 0;
+  }
+
+  if (dateA == null) {
+    return 1;
+  }
+
+  if (dateB == null) {
+    return -1;
+  }
+
+  return dateB.compareTo(dateA);
+});
+
+            // ======================================================
+            // FILTRE
+            // ======================================================
+
+            final filtered = selectedTab == 'Toutes'
+                ? allNotifications
+                : allNotifications
+                    .where(
+                      (notification) => notification.category == selectedTab,
+                    )
+                    .toList();
+
+            // ======================================================
+            // NOTIFICATIONS NON LUES
+            // ======================================================
+
+            final unreadCount = allNotifications
+                .where(
+                  (notification) => notification.unread,
+                )
+                .length;
+
+            return Column(
+              children: [
+                _buildHeader(
+                  unreadCount,
+                  allNotifications,
+                ),
+                _buildTabs(),
+                Expanded(
+                  child: filtered.isEmpty
+                      ? const _EmptyNotifications()
+                      : ListView.builder(
+                          physics: const BouncingScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(
+                            16,
+                            16,
+                            16,
+                            30,
+                          ),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final notification = filtered[index];
+
+                            return Padding(
+                              padding: const EdgeInsets.only(
+                                bottom: 10,
+                              ),
+                              child: Dismissible(
+                                key: ValueKey(
+                                  notification.id,
+                                ),
+                                direction: DismissDirection.endToStart,
+                                onDismissed: (_) {
+                                  deleteNotification(
+                                    notification.id,
+                                  );
+                                },
+                                background: Container(
+                                  alignment: Alignment.centerRight,
+                                  padding: const EdgeInsets.only(
+                                    right: 22,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: red,
+                                    borderRadius: BorderRadius.circular(
+                                      18,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.delete_rounded,
+                                    color: Colors.white,
+                                    size: 22,
+                                  ),
+                                ),
+                                child: _NotificationCard(
+                                  notification: notification,
+                                  onTap: () {
+                                    showNotificationDetail(
+                                      context,
+                                      notification,
+                                    );
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -434,12 +709,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   // HEADER
   // ============================================================
 
-  Widget _buildHeader() {
+  Widget _buildHeader(
+    int unreadCount,
+    List<MoovlyNotification> notifications,
+  ) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+      padding: const EdgeInsets.fromLTRB(
+        20,
+        14,
+        20,
+        8,
+      ),
       child: Row(
         children: [
-          // Back
           Container(
             width: 44,
             height: 44,
@@ -462,10 +744,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
             ),
           ),
-
           const SizedBox(width: 14),
-
-          // Title
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,7 +762,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Text(
                   unreadCount == 0
                       ? 'Vous êtes à jour'
-                      : '$unreadCount notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}',
+                      : '$unreadCount notification'
+                          '${unreadCount > 1 ? 's' : ''} '
+                          'non lue'
+                          '${unreadCount > 1 ? 's' : ''}',
                   style: const TextStyle(
                     color: mutedText,
                     fontSize: 12,
@@ -493,11 +775,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ),
           ),
-
-          // Tout lire
           if (unreadCount > 0)
             GestureDetector(
-              onTap: markAllRead,
+              onTap: () => markAllRead(notifications),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 11,
@@ -547,7 +827,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return SizedBox(
       height: 52,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 20,
+        ),
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         itemCount: tabs.length,
@@ -613,6 +895,7 @@ class MoovlyNotification {
   final String time;
   final Color color;
   final String category;
+  final DateTime? date;
 
   bool unread;
 
@@ -625,6 +908,7 @@ class MoovlyNotification {
     required this.color,
     required this.category,
     required this.unread,
+    required this.date,
   });
 }
 
@@ -672,7 +956,6 @@ class _NotificationCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon
             Stack(
               clipBehavior: Clip.none,
               children: [
@@ -681,7 +964,9 @@ class _NotificationCard extends StatelessWidget {
                   height: 48,
                   decoration: BoxDecoration(
                     color: notification.color.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(
+                      15,
+                    ),
                   ),
                   child: Icon(
                     notification.icon,
@@ -708,10 +993,7 @@ class _NotificationCard extends StatelessWidget {
                   ),
               ],
             ),
-
             const SizedBox(width: 12),
-
-            // Content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -766,8 +1048,12 @@ class _NotificationCard extends StatelessWidget {
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: notification.color.withOpacity(0.09),
-                          borderRadius: BorderRadius.circular(20),
+                          color: notification.color.withOpacity(
+                            0.09,
+                          ),
+                          borderRadius: BorderRadius.circular(
+                            20,
+                          ),
                         ),
                         child: Text(
                           notification.category,
@@ -885,7 +1171,8 @@ class _EmptyNotifications extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Vous êtes à jour !\nNous vous préviendrons en cas de nouveauté.',
+              'Vous êtes à jour !\n'
+              'Nous vous préviendrons en cas de nouveauté.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _NotificationsScreenState.mutedText,

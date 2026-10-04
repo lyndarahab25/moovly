@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'phone_verification_screen.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -33,54 +37,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ============================================================
 
   final List<String> _wilayas = [
-    'Adrar',
-    'Chlef',
-    'Laghouat',
-    'Oum El Bouaghi',
-    'Batna',
-    'Béjaïa',
-    'Biskra',
-    'Béchar',
-    'Blida',
-    'Bouira',
-    'Tamanrasset',
-    'Tébessa',
-    'Tlemcen',
-    'Tiaret',
-    'Tizi Ouzou',
-    'Alger',
-    'Djelfa',
-    'Jijel',
-    'Sétif',
-    'Saïda',
-    'Skikda',
-    'Sidi Bel Abbès',
-    'Annaba',
-    'Guelma',
-    'Constantine',
-    'Médéa',
-    'Mostaganem',
-    'M’Sila',
-    'Mascara',
-    'Ouargla',
-    'Oran',
-    'El Bayadh',
-    'Illizi',
-    'Bordj Bou Arréridj',
-    'Boumerdès',
-    'El Tarf',
-    'Tindouf',
-    'Tissemsilt',
-    'El Oued',
-    'Khenchela',
-    'Souk Ahras',
-    'Tipaza',
-    'Mila',
-    'Aïn Defla',
-    'Naâma',
-    'Aïn Témouchent',
-    'Ghardaïa',
-    'Relizane',
+    '01 — Adrar',
+    '02 — Chlef',
+    '03 — Laghouat',
+    '04 — Oum El Bouaghi',
+    '05 — Batna',
+    '06 — Béjaïa',
+    '07 — Biskra',
+    '08 — Béchar',
+    '09 — Blida',
+    '10 — Bouira',
+    '11 — Tamanrasset',
+    '12 — Tébessa',
+    '13 — Tlemcen',
+    '14 — Tiaret',
+    '15 — Tizi Ouzou',
+    '16 — Alger',
+    '17 — Djelfa',
+    '18 — Jijel',
+    '19 — Sétif',
+    '20 — Saïda',
+    '21 — Skikda',
+    '22 — Sidi Bel Abbès',
+    '23 — Annaba',
+    '24 — Guelma',
+    '25 — Constantine',
+    '26 — Médéa',
+    '27 — Mostaganem',
+    '28 — M’Sila',
+    '29 — Mascara',
+    '30 — Ouargla',
+    '31 — Oran',
+    '32 — El Bayadh',
+    '33 — Illizi',
+    '34 — Bordj Bou Arréridj',
+    '35 — Boumerdès',
+    '36 — El Tarf',
+    '37 — Tindouf',
+    '38 — Tissemsilt',
+    '39 — El Oued',
+    '40 — Khenchela',
+    '41 — Souk Ahras',
+    '42 — Tipaza',
+    '43 — Mila',
+    '44 — Aïn Defla',
+    '45 — Naâma',
+    '46 — Aïn Témouchent',
+    '47 — Ghardaïa',
+    '48 — Relizane',
+    '49 — Timimoun',
+    '50 — Bordj Badji Mokhtar',
+    '51 — Ouled Djellal',
+    '52 — Béni Abbès',
+    '53 — In Salah',
+    '54 — In Guezzam',
+    '55 — Touggourt',
+    '56 — Djanet',
+    '57 — El M’Ghair',
+    '58 — El Meniaâ',
+    '59 — Aflou',
+    '60 — Barika',
+    '61 — El Kantara',
+    '62 — Bir El Ater',
+    '63 — El Aricha',
+    '64 — Ksar Chellala',
+    '65 — Aïn Oussera',
+    '66 — Messaad',
+    '67 — Ksar El Boukhari',
+    '68 — Bou Saâda',
+    '69 — El Bayadh Sidi Cheikh',
   ];
 
   // ============================================================
@@ -96,6 +121,106 @@ class _RegisterScreenState extends State<RegisterScreen> {
   static const Color fieldHint = Color(0xFFA5B0C4);
 
   static const Color borderColor = Color(0xFFE1E5EE);
+
+  Future<void> _registerWithPhone({
+    required String name,
+    required String phone,
+    required String wilaya,
+  }) async {
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          try {
+            final userCredential =
+                await FirebaseAuth.instance.signInWithCredential(
+              credential,
+            );
+
+            final user = userCredential.user;
+
+            if (user == null) return;
+
+            await FirebaseFirestore.instance
+                .collection('users')
+                .doc(user.uid)
+                .set({
+              'uid': user.uid,
+              'name': name,
+              'email': null,
+              'phone': phone,
+              'wilaya': wilaya,
+              'createdAt': FieldValue.serverTimestamp(),
+            });
+
+            await FirebaseFirestore.instance.collection('carte').add({
+              'id_user':
+                  FirebaseFirestore.instance.collection('users').doc(user.uid),
+              'numero': 'MV-${user.uid.substring(0, 8).toUpperCase()}',
+              'solde': 0.0,
+              'statut': 'active',
+              'date_expiration': null,
+            });
+
+            if (!mounted) return;
+
+            Navigator.pushReplacementNamed(
+              context,
+              '/home',
+            );
+          } catch (e) {
+            if (mounted) {
+              _showMessage('Erreur lors de la création du compte.');
+            }
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          String message;
+
+          switch (e.code) {
+            case 'invalid-phone-number':
+              message = 'Le numéro de téléphone est invalide.';
+              break;
+
+            case 'too-many-requests':
+              message = 'Trop de tentatives. Réessayez plus tard.';
+              break;
+
+            case 'quota-exceeded':
+              message = 'La limite de SMS a été atteinte.';
+              break;
+
+            default:
+              message = 'Impossible d’envoyer le SMS : ${e.message ?? e.code}';
+          }
+
+          if (mounted) {
+            _showMessage(message);
+          }
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (!mounted) return;
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PhoneVerificationScreen(
+                verificationId: verificationId,
+                phone: phone,
+                name: name,
+                wilaya: wilaya,
+              ),
+            ),
+          );
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Erreur : $e');
+      }
+    }
+  }
 
   // ============================================================
   // DISPOSE
@@ -207,35 +332,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
               // PASSWORD
               // ==================================================
 
-              _buildPasswordField(
-                controller: _passwordController,
-                hint: 'Créer un mot de passe',
-                obscure: _obscurePassword,
-                onToggle: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-              ),
+              if (_isEmailRegister) ...[
+                // ==================================================
+                // PASSWORD
+                // ==================================================
 
-              const SizedBox(height: 12),
+                _buildPasswordField(
+                  controller: _passwordController,
+                  hint: 'Créer un mot de passe',
+                  obscure: _obscurePassword,
+                  onToggle: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
 
-              // ==================================================
-              // CONFIRM PASSWORD
-              // ==================================================
+                const SizedBox(height: 12),
 
-              _buildPasswordField(
-                controller: _confirmPasswordController,
-                hint: 'Confirmer le mot de passe',
-                obscure: _obscureConfirmPassword,
-                onToggle: () {
-                  setState(() {
-                    _obscureConfirmPassword = !_obscureConfirmPassword;
-                  });
-                },
-              ),
+                // ==================================================
+                // CONFIRM PASSWORD
+                // ==================================================
 
-              const SizedBox(height: 22),
+                _buildPasswordField(
+                  controller: _confirmPasswordController,
+                  hint: 'Confirmer le mot de passe',
+                  obscure: _obscureConfirmPassword,
+                  onToggle: () {
+                    setState(() {
+                      _obscureConfirmPassword = !_obscureConfirmPassword;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 22),
+              ] else ...[
+                const SizedBox(height: 10),
+              ],
 
               // ==================================================
               // REGISTER BUTTON
@@ -788,7 +921,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
             label: 'Google',
-            onTap: () {},
+            onTap: _registerWithGoogle,
           ),
         ),
         const SizedBox(width: 14),
@@ -885,57 +1018,264 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // ============================================================
   // REGISTER ACTION
   // ============================================================
+  Future<void> _registerWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
-  void _handleRegister() {
+      await googleSignIn.initialize();
+
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
+
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final User? user = userCredential.user;
+
+      if (user == null) {
+        _showMessage('Impossible de créer le compte avec Google.');
+        return;
+      }
+
+      // ==========================================================
+      // USERS
+      // ==========================================================
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'name': user.displayName ?? '',
+        'email': user.email ?? '',
+        'phone': user.phoneNumber,
+        'wilaya': _selectedWilaya,
+        'provider': 'google',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // ==========================================================
+      // CARTE MOOVLY
+      // ==========================================================
+
+      final carteQuery = await FirebaseFirestore.instance
+          .collection('carte')
+          .where('id_user', isEqualTo: user.uid)
+          .limit(1)
+          .get();
+
+      if (carteQuery.docs.isEmpty) {
+        await FirebaseFirestore.instance.collection('carte').add({
+          'id_user': user.uid,
+          'numero': 'MV-${user.uid.substring(0, 8).toUpperCase()}',
+          'solde': 0.0,
+          'type': 'standard',
+          'statut': 'active',
+          'date_expiration': null,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/home',
+      );
+    } on GoogleSignInException catch (e) {
+      if (!mounted) return;
+
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        return;
+      }
+
+      _showMessage(
+        'Connexion Google impossible : ${e.description ?? e.code}',
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        e.message ?? 'Erreur lors de l’inscription avec Google.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        'Impossible de créer le compte avec Google.',
+      );
+    }
+  }
+
+  Future<void> _handleRegister() async {
     final name = _nameController.text.trim();
-    final password = _passwordController.text;
-    final confirmPassword = _confirmPasswordController.text;
+    final email = _emailController.text.trim();
+    final phone = _phoneController.text.trim();
+
+    // ============================================================
+    // VALIDATION COMMUNE
+    // ============================================================
 
     if (name.isEmpty) {
       _showMessage('Veuillez entrer votre nom complet.');
       return;
     }
 
-    if (_isEmailRegister && _emailController.text.trim().isEmpty) {
-      _showMessage(
-        'Veuillez entrer votre adresse e-mail.',
-      );
-      return;
-    }
-
-    if (!_isEmailRegister && _phoneController.text.trim().isEmpty) {
-      _showMessage(
-        'Veuillez entrer votre numéro de téléphone.',
-      );
-      return;
-    }
-
     if (_selectedWilaya == null) {
-      _showMessage(
-        'Veuillez sélectionner votre Wilaya.',
-      );
+      _showMessage('Veuillez sélectionner votre Wilaya.');
       return;
     }
+
+    // ============================================================
+    // INSCRIPTION PAR TÉLÉPHONE
+    // ============================================================
+
+    if (!_isEmailRegister) {
+      if (phone.isEmpty) {
+        _showMessage('Veuillez entrer votre numéro de téléphone.');
+        return;
+      }
+
+      // Exemple pour l'Algérie :
+      // 0555000001 → +213555000001
+      String formattedPhone = phone.replaceAll(' ', '');
+
+      if (formattedPhone.startsWith('0')) {
+        formattedPhone = '+213${formattedPhone.substring(1)}';
+      }
+
+      if (!formattedPhone.startsWith('+')) {
+        _showMessage(
+          'Veuillez entrer un numéro valide, par exemple +213555000001.',
+        );
+        return;
+      }
+
+      await _registerWithPhone(
+        name: name,
+        phone: formattedPhone,
+        wilaya: _selectedWilaya!,
+      );
+
+      return;
+    }
+
+    // ============================================================
+    // INSCRIPTION PAR E-MAIL
+    // ============================================================
+
+    if (email.isEmpty) {
+      _showMessage('Veuillez entrer votre adresse e-mail.');
+      return;
+    }
+
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
 
     if (password.isEmpty) {
+      _showMessage('Veuillez créer un mot de passe.');
+      return;
+    }
+
+    if (password.length < 6) {
       _showMessage(
-        'Veuillez créer un mot de passe.',
+        'Le mot de passe doit contenir au moins 6 caractères.',
       );
       return;
     }
 
     if (password != confirmPassword) {
-      _showMessage(
-        'Les mots de passe ne correspondent pas.',
-      );
+      _showMessage('Les mots de passe ne correspondent pas.');
       return;
     }
 
-    // Firebase sera branché après.
-    Navigator.pushReplacementNamed(
-      context,
-      '/home',
-    );
+    // ============================================================
+    // FIREBASE EMAIL
+    // ============================================================
+
+    try {
+      final credential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user;
+
+      if (user == null) {
+        _showMessage('Impossible de créer le compte.');
+        return;
+      }
+
+      // ==========================================================
+// USERS
+// ==========================================================
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'uid': user.uid,
+        'name': name,
+        'email': email,
+        'phone': null,
+        'wilaya': _selectedWilaya,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+// ==========================================================
+// CARTE MOOVLY
+// ==========================================================
+
+      await FirebaseFirestore.instance.collection('carte').add({
+        'id_user': FirebaseFirestore.instance.collection('users').doc(user.uid),
+        'numero': 'MV-${user.uid.substring(0, 8).toUpperCase()}',
+        'solde': 0.0,
+        'type': 'standard',
+        'statut': 'active',
+        'date_expiration': null,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      if (!mounted) return;
+
+      _showMessage('Compte créé avec succès !');
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/home',
+      );
+    } on FirebaseAuthException catch (e) {
+      String message;
+
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'Cette adresse e-mail est déjà utilisée.';
+          break;
+
+        case 'invalid-email':
+          message = 'Adresse e-mail invalide.';
+          break;
+
+        case 'weak-password':
+          message = 'Le mot de passe est trop faible.';
+          break;
+
+        case 'operation-not-allowed':
+          message = 'L’inscription par e-mail n’est pas activée.';
+          break;
+
+        default:
+          message = 'Une erreur est survenue : ${e.message ?? e.code}';
+      }
+
+      if (mounted) {
+        _showMessage(message);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Erreur : $e');
+      }
+    }
   }
 
   // ============================================================

@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class AIScreen extends StatefulWidget {
   const AIScreen({super.key});
@@ -18,6 +21,15 @@ class _AIScreenState extends State<AIScreen> {
   static const Color dark = Color(0xFF0F172A);
   static const Color muted = Color(0xFF64748B);
   static const Color border = Color(0xFFE2E8F0);
+
+  // ============================================================
+  // OLLAMA
+  // ============================================================
+
+  // Pour Flutter exécuté sur Windows / PC.
+  static const String _ollamaUrl = 'http://localhost:11434/api/generate';
+
+  static const String _model = 'qwen3:4b';
 
   // ============================================================
   // CONTROLLERS
@@ -99,19 +111,13 @@ class _AIScreenState extends State<AIScreen> {
               ),
             ),
             const SizedBox(width: 11),
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Moovly AI",
-                  style: TextStyle(
-                    color: dark,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(height: 1),
-              ],
+            const Text(
+              "Moovly AI",
+              style: TextStyle(
+                color: dark,
+                fontSize: 18,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ],
         ),
@@ -154,7 +160,7 @@ class _AIScreenState extends State<AIScreen> {
   }
 
   // ============================================================
-  // MESSAGES LIST
+  // MESSAGES
   // ============================================================
 
   Widget _buildMessages() {
@@ -174,7 +180,6 @@ class _AIScreenState extends State<AIScreen> {
         }
 
         final message = _messages[index];
-
         final bool isUser = message["sender"] == "user";
 
         return _buildMessageBubble(
@@ -233,9 +238,7 @@ class _AIScreenState extends State<AIScreen> {
                 ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(
-                0.025,
-              ),
+              color: Colors.black.withOpacity(0.025),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -271,9 +274,7 @@ class _AIScreenState extends State<AIScreen> {
         ),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(
-            18,
-          ),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: border,
           ),
@@ -281,38 +282,11 @@ class _AIScreenState extends State<AIScreen> {
         child: const Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              width: 7,
-              height: 7,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: muted,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
+            _Dot(),
             SizedBox(width: 5),
-            SizedBox(
-              width: 7,
-              height: 7,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: muted,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
+            _Dot(),
             SizedBox(width: 5),
-            SizedBox(
-              width: 7,
-              height: 7,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: muted,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
+            _Dot(),
           ],
         ),
       ),
@@ -347,9 +321,7 @@ class _AIScreenState extends State<AIScreen> {
                 suggestions[index],
               );
             },
-            borderRadius: BorderRadius.circular(
-              20,
-            ),
+            borderRadius: BorderRadius.circular(20),
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 14,
@@ -393,9 +365,7 @@ class _AIScreenState extends State<AIScreen> {
         color: background,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              0.04,
-            ),
+            color: Colors.black.withOpacity(0.04),
             blurRadius: 15,
             offset: const Offset(0, -4),
           ),
@@ -417,9 +387,7 @@ class _AIScreenState extends State<AIScreen> {
                 minLines: 1,
                 maxLines: 4,
                 textInputAction: TextInputAction.send,
-                onSubmitted: (value) {
-                  _sendMessage(value);
-                },
+                onSubmitted: _sendMessage,
                 decoration: const InputDecoration(
                   hintText: "Demandez quelque chose à Moovly AI...",
                   hintStyle: TextStyle(
@@ -472,8 +440,8 @@ class _AIScreenState extends State<AIScreen> {
   // SEND MESSAGE
   // ============================================================
 
-  void _sendMessage(String message) {
-    if (message.trim().isEmpty) {
+  Future<void> _sendMessage(String message) async {
+    if (message.trim().isEmpty || _isTyping) {
       return;
     }
 
@@ -486,83 +454,167 @@ class _AIScreenState extends State<AIScreen> {
       });
 
       _messageController.clear();
-
       _isTyping = true;
     });
 
     _scrollToBottom();
 
-    Future.delayed(
-      const Duration(milliseconds: 800),
-      () {
-        if (!mounted) return;
-
-        setState(() {
-          _isTyping = false;
-
-          _messages.add({
-            "sender": "ai",
-            "text": _getAiResponse(
-              cleanMessage,
-            ),
-          });
-        });
-
-        _scrollToBottom();
-      },
+    final response = await _getAiResponse(
+      cleanMessage,
     );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isTyping = false;
+
+      _messages.add({
+        "sender": "ai",
+        "text": response,
+      });
+    });
+
+    _scrollToBottom();
   }
 
   // ============================================================
-  // AI RESPONSE
+  // REAL AI RESPONSE
   // ============================================================
 
-  String _getAiResponse(String message) {
-    final text = message.toLowerCase();
+  Future<String> _getAiResponse(
+    String message,
+  ) async {
+    try {
+      final response = await http
+          .post(
+            Uri.parse(_ollamaUrl),
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode({
+              'model': _model,
 
-    if (text.contains("bus") && text.contains("proxim")) {
-      return "Je peux vous aider à trouver les bus "
-          "à proximité. 🚌\n\n"
-          "Ouvrez la carte depuis Moovly pour voir "
-          "les bus disponibles autour de vous.";
+              // Prompt principal
+              'prompt': '''
+Tu es Moovly AI, l'assistant intelligent
+de l'application mobile Moovly.
+
+Moovly est une plateforme de mobilité urbaine
+destinée notamment aux déplacements à Bouira,
+en Algérie.
+
+Tu aides les utilisateurs concernant :
+- les lignes de bus ;
+- les trajets ;
+- les déplacements urbains ;
+- les bus à proximité ;
+- les tickets ;
+- les paiements par QR code ;
+- les abonnements Moovly ;
+- les cartes Moovly ;
+- les fonctionnalités de l'application.
+
+Les abonnements Moovly sont :
+- Premium : suppression des publicités et
+  notifications avancées.
+- Gold : fonctionnalités Premium + Moovly AI +
+  suggestions intelligentes + accès au suivi
+  en temps réel des bus lorsqu'il est disponible.
+
+RÈGLES IMPORTANTES :
+
+1. Réponds en français si l'utilisateur écrit
+   en français.
+
+2. Sois naturel, clair et concis.
+
+3. Ne prétends jamais avoir accès à une donnée
+   en temps réel si elle ne t'est pas fournie.
+
+4. Ne crée pas de lignes, horaires, prix ou
+   informations de transport imaginaires.
+
+5. Si une information précise n'est pas disponible,
+   dis-le clairement.
+
+6. Tu es l'assistant intégré à Moovly.
+
+7. Ne parle pas d'Ollama ou de Qwen sauf si
+   l'utilisateur demande explicitement des
+   informations techniques sur ton fonctionnement.
+
+Question de l'utilisateur :
+$message
+''',
+
+              // IMPORTANT pour Qwen3 :
+              // on ne veut pas afficher son raisonnement
+              // dans l'application.
+              'think': false,
+
+              // Une seule réponse complète.
+              'stream': false,
+            }),
+          )
+          .timeout(
+            const Duration(seconds: 120),
+          );
+
+      if (response.statusCode != 200) {
+        debugPrint(
+          'OLLAMA ERROR ${response.statusCode}: ${response.body}',
+        );
+
+        return "Désolé, Moovly AI rencontre actuellement "
+            "un problème de connexion. Veuillez réessayer.";
+      }
+
+      final data = jsonDecode(response.body);
+
+      String answer = (data['response'] ?? '').toString().trim();
+
+      if (answer.isEmpty) {
+        return "Je n'ai pas pu générer une réponse "
+            "pour le moment. Veuillez réessayer.";
+      }
+
+      answer = _cleanAiResponse(answer);
+
+      if (answer.isEmpty) {
+        return "Je n'ai pas pu générer une réponse "
+            "pour le moment. Veuillez réessayer.";
+      }
+
+      return answer;
+    } catch (e) {
+      debugPrint(
+        'OLLAMA CONNECTION ERROR: $e',
+      );
+
+      return "Je ne peux pas contacter Moovly AI "
+          "pour le moment.\n\n"
+          "Vérifiez que le service Moovly AI est "
+          "bien démarré sur votre ordinateur.";
     }
+  }
 
-    if (text.contains("trajet") ||
-        text.contains("aller") ||
-        text.contains("route")) {
-      return "Bien sûr ! 📍\n\n"
-          "Indiquez-moi votre point de départ "
-          "et votre destination et je pourrai vous "
-          "aider à choisir le meilleur trajet.";
-    }
+  // ============================================================
+  // CLEAN RESPONSE
+  // ============================================================
 
-    if (text.contains("ligne")) {
-      return "Je peux vous aider à trouver une ligne "
-          "de bus adaptée à votre déplacement. 🚌\n\n"
-          "Donnez-moi votre destination.";
-    }
+  String _cleanAiResponse(String response) {
+    String cleaned = response;
 
-    if (text.contains("bouira")) {
-      return "Moovly est conçu pour faciliter vos "
-          "déplacements à Bouira. 📍\n\n"
-          "Vous pouvez consulter les lignes, "
-          "les bus à proximité et planifier vos trajets.";
-    }
+    // Supprime correctement les blocs <think>...</think>
+    cleaned = cleaned.replaceAll(
+      RegExp(
+        r'<think>[\s\S]*?</think>',
+        caseSensitive: false,
+      ),
+      '',
+    );
 
-    if (text.contains("bonjour") ||
-        text.contains("salut") ||
-        text.contains("hello")) {
-      return "Bonjour 👋\n\n"
-          "Comment puis-je vous aider avec votre "
-          "déplacement aujourd'hui ?";
-    }
-
-    return "Je suis Moovly AI 🤖\n\n"
-        "Je peux vous aider avec vos déplacements, "
-        "les lignes de bus, les trajets et les bus "
-        "à proximité.\n\n"
-        "Essayez par exemple : "
-        "\"Quel bus prendre pour aller au centre-ville ?\"";
+    return cleaned.trim();
   }
 
   // ============================================================
@@ -577,7 +629,9 @@ class _AIScreenState extends State<AIScreen> {
 
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(
+          milliseconds: 300,
+        ),
         curve: Curves.easeOut,
       );
     });
@@ -594,9 +648,32 @@ class _AIScreenState extends State<AIScreen> {
       _messages.add({
         "sender": "ai",
         "text": "Bonjour 👋 Je suis Moovly AI.\n\n"
-            "Comment puis-je vous aider "
-            "aujourd'hui ?",
+            "Comment puis-je vous aider aujourd'hui ?",
       });
     });
+
+    _scrollToBottom();
+  }
+}
+
+// ============================================================
+// TYPING DOT
+// ============================================================
+
+class _Dot extends StatelessWidget {
+  const _Dot();
+
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      width: 7,
+      height: 7,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Color(0xFF64748B),
+          shape: BoxShape.circle,
+        ),
+      ),
+    );
   }
 }

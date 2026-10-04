@@ -1,0 +1,112 @@
+{
+  "project_info": {
+    "project_number": "394581004334",
+    "project_id": "moovly-9b6e3",
+    "storage_bucket": "moovly-9b6e3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:394581004334:android:2a1d27c58b72e7a635cfbf",
+        "android_client_info": {
+          "package_name": "com.example.moovly"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "394581004334-f4bhfupna4i0us7o6eggoiskkutskf9h.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.moovly",
+            "certificate_hash": "fbbfc6674340f6bdde380acce0a3690a7386f09e"
+          }
+        },
+        {
+          "client_id": "394581004334-k4uaua5err7lgfb1p14jnhbtv4segbv2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTT8iKn824T2KJV928O_s0YCLg11_WjqE"
+        },
+        {
+          "current_key": "AIzaSyDhSeKt5BlFhC3nXjkgEITOCZKplNwh9Ig"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "394581004334-k4uaua5err7lgfb1p14jnhbtv4segbv2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "394581004334-9o94c8n4m09bn780v25d4gl0jbv4u73u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.moovly"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:394581004334:android:920ff65343bc0b5f35cfbf",
+        "android_client_info": {
+          "package_name": "com.mycompany.moovly"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "394581004334-kvkgoo0ggc1e8p27tpkh50jung0p3t7o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.moovly",
+            "certificate_hash": "fbbfc6674340f6bdde380acce0a3690a7386f09e"
+          }
+        },
+        {
+          "client_id": "394581004334-lvf1umte0ji3shrh3gk4g2684m1qmp9i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mycompany.moovly",
+            "certificate_hash": "9bbb3186b2189ef16d8f272bdab59362c395cbb4"
+          }
+        },
+        {
+          "client_id": "394581004334-k4uaua5err7lgfb1p14jnhbtv4segbv2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDTT8iKn824T2KJV928O_s0YCLg11_WjqE"
+        },
+        {
+          "current_key": "AIzaSyDhSeKt5BlFhC3nXjkgEITOCZKplNwh9Ig"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "394581004334-k4uaua5err7lgfb1p14jnhbtv4segbv2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "394581004334-9o94c8n4m09bn780v25d4gl0jbv4u73u.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.mycompany.moovly"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

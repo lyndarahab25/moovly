@@ -272,12 +272,6 @@ class GoldRequiredScreen extends StatelessWidget {
               ),
 
               _feature(
-                icon: Icons.directions_bus_rounded,
-                title: "Suivi en temps réel",
-                description: "Consultez les bus disponibles et leur proximité.",
-              ),
-
-              _feature(
                 icon: Icons.lightbulb_outline_rounded,
                 title: "Optimisation de vos déplacements",
                 description:

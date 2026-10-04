@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import '../../core/theme/theme_provider.dart';
 import '../authn/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -23,27 +26,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
   static const Color lightBlue = Color(0xFFEAF0FF);
   static const Color red = Color(0xFFDC2626);
 
+  Color get surfaceColor => _darkMode ? const Color(0xFF1E293B) : Colors.white;
+
+  Color get primaryTextColor => _darkMode ? Colors.white : textDark;
+
+  Color get secondaryTextColor =>
+      _darkMode ? const Color(0xFF94A3B8) : textMuted;
+
+  Color get dynamicBorderColor =>
+      _darkMode ? const Color(0xFF334155) : borderColor;
+
+  Color get dynamicLightBlue => _darkMode ? const Color(0xFF263B63) : lightBlue;
   // ─────────────────────────────────────────────────────────────
   // USER DATA
   // ─────────────────────────────────────────────────────────────
 
-  String _firstName = 'Lynda';
-  String _lastName = 'Rahab';
-  String _email = 'lynda.rahab@email.com';
-  String _phone = '+213 5 XX XX XX XX';
+  String _firstName = '';
+  String _lastName = '';
+  String _email = '';
+  String _phone = '';
+  String _wilaya = '';
 
   String _language = 'Français';
   bool _darkMode = false;
   bool _notificationsEnabled = true;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
   // ─────────────────────────────────────────────────────────────
   // BUILD
   // ─────────────────────────────────────────────────────────────
+  Future<void> _loadUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) return;
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists || !mounted) return;
+
+      final data = doc.data();
+
+      if (data == null) return;
+
+      final name = (data['name'] ?? '').toString();
+      final nameParts = name.trim().split(' ');
+
+      setState(() {
+        _firstName = nameParts.isNotEmpty ? nameParts.first : '';
+        _lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+        _email = (data['email'] ?? user.email ?? '').toString();
+        _phone = (data['phone'] ?? '').toString();
+        _wilaya = (data['wilaya'] ?? '').toString();
+      });
+    } catch (e) {
+      debugPrint('Erreur chargement profil : $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bgLight,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -68,6 +120,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'Mes abonnements',
                 subtitle: 'Gérer votre abonnement Moovly',
                 onTap: _showSubscriptions,
+              ),
+              const SizedBox(height: 12),
+              _buildAccountItem(
+                icon: Icons.qr_code_scanner_rounded,
+                title: 'Validateur QR',
+                subtitle: 'Valider le trajet',
+                onTap: () {
+                  Navigator.pushNamed(context, '/validator');
+                },
               ),
               const SizedBox(height: 12),
               _buildAccountItem(
@@ -1086,6 +1147,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       value: _darkMode,
                       activeColor: primaryBlue,
                       onChanged: (value) {
+                        Provider.of<ThemeProvider>(context, listen: false)
+                            .toggleTheme(value);
+
                         setState(() {
                           _darkMode = value;
                         });
@@ -1561,16 +1625,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
+                // Fermer la boîte de dialogue
                 Navigator.pop(dialogContext);
 
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const LoginScreen(),
-                  ),
-                  (route) => false,
-                );
+                try {
+                  // 🔥 VRAIE déconnexion Firebase
+                  await FirebaseAuth.instance.signOut();
+
+                  if (!mounted) return;
+
+                  // Retour vers Login en supprimant toutes
+                  // les anciennes pages
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const LoginScreen(),
+                    ),
+                    (route) => false,
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+
+                  _showMessage(
+                    'Impossible de se déconnecter. Veuillez réessayer.',
+                  );
+                }
               },
               child: const Text(
                 'Se déconnecter',
@@ -1585,7 +1665,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
     );
   }
-
   // ─────────────────────────────────────────────────────────────
   // SNACKBAR
   // ─────────────────────────────────────────────────────────────

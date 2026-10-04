@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'phone_login_verification_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -118,28 +122,44 @@ class _LoginScreenState extends State<LoginScreen> {
               // PASSWORD
               // ==================================================
 
-              _buildPasswordField(),
-
-              const SizedBox(height: 7),
+              if (_isEmailLogin) ...[
+                _buildPasswordField(),
+                const SizedBox(height: 7),
+              ],
 
               // ==================================================
               // FORGOT PASSWORD
               // ==================================================
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: GestureDetector(
-                  onTap: _handleForgotPassword,
-                  child: const Text(
-                    'Mot de passe oublié ?',
-                    style: TextStyle(
-                      color: muted,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
+              if (_isEmailLogin)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: GestureDetector(
+                    onTap: _handleForgotPassword,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(
+                          color: primaryBlue,
+                          width: 1.2,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Mot de passe oublié ?',
+                        style: TextStyle(
+                          color: primaryBlue,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
 
               const SizedBox(height: 22),
 
@@ -533,7 +553,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             label: 'Google',
-            onTap: () {},
+            onTap: _loginWithGoogle,
           ),
         ),
         const SizedBox(width: 14),
@@ -630,38 +650,299 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
   // ACTIONS
   // ============================================================
+  Future<void> _loginWithGoogle() async {
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn.instance;
 
-  void _handleLogin() {
-    final identifier = _isEmailLogin
-        ? _emailController.text.trim()
-        : _phoneController.text.trim();
+      await googleSignIn.initialize();
 
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
+
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      final User? user = userCredential.user;
+
+      if (user == null) {
+        _showMessage('Impossible de récupérer le compte Google.');
+        return;
+      }
+
+      // Créer / mettre à jour le profil utilisateur
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      await userRef.set({
+        'uid': user.uid,
+        'name': user.displayName ?? '',
+        'email': user.email ?? '',
+        'phone': user.phoneNumber,
+        'provider': 'google',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Vérifier si la carte Moovly existe déjà
+      final carteQuery = await FirebaseFirestore.instance
+          .collection('carte')
+          .where(
+            'id_user',
+            isEqualTo: userRef,
+          )
+          .limit(1)
+          .get();
+
+      // Créer une carte standard pour un nouvel utilisateur
+      if (carteQuery.docs.isEmpty) {
+        await FirebaseFirestore.instance.collection('carte').add({
+          'id_user': userRef,
+          'numero': 'MV-${user.uid.substring(0, 8).toUpperCase()}',
+          'solde': 0.0,
+          'type': 'standard',
+          'statut': 'active',
+          'date_expiration': null,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      if (!mounted) return;
+
+      _showMessage('Connexion Google réussie !');
+
+      Navigator.pushReplacementNamed(
+        context,
+        '/home',
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        e.message ?? 'Erreur lors de la connexion avec Google.',
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage('Erreur Google : $e');
+    }
+  }
+
+  Future<void> _handleLogin() async {
+    final email = _emailController.text.trim();
+    String phone = _phoneController.text.trim();
     final password = _passwordController.text;
 
-    if (identifier.isEmpty) {
+    // ============================================================
+    // CONNEXION PAR E-MAIL
+    // ============================================================
+
+    if (_isEmailLogin) {
+      if (email.isEmpty) {
+        _showMessage('Veuillez entrer votre adresse e-mail.');
+        return;
+      }
+
+      if (password.isEmpty) {
+        _showMessage('Veuillez entrer votre mot de passe.');
+        return;
+      }
+
+      try {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+
+        if (!mounted) return;
+
+        _showMessage('Connexion réussie !');
+
+        Navigator.pushReplacementNamed(
+          context,
+          '/home',
+        );
+      } on FirebaseAuthException catch (e) {
+        String message;
+
+        switch (e.code) {
+          case 'invalid-credential':
+          case 'wrong-password':
+          case 'user-not-found':
+            message = 'E-mail ou mot de passe incorrect.';
+            break;
+
+          case 'invalid-email':
+            message = 'Adresse e-mail invalide.';
+            break;
+
+          case 'user-disabled':
+            message = 'Ce compte a été désactivé.';
+            break;
+
+          case 'too-many-requests':
+            message = 'Trop de tentatives. Réessayez plus tard.';
+            break;
+
+          default:
+            message = 'Erreur : ${e.message}';
+        }
+
+        if (!mounted) return;
+        _showMessage(message);
+      } catch (e) {
+        if (!mounted) return;
+        _showMessage('Une erreur est survenue : $e');
+      }
+
+      return;
+    }
+
+    // ============================================================
+    // CONNEXION PAR NUMÉRO → SMS
+    // ============================================================
+
+    if (phone.isEmpty) {
+      _showMessage('Veuillez entrer votre numéro de téléphone.');
+      return;
+    }
+
+    // Conversion 07XXXXXXXX → +2137XXXXXXXX
+    if (phone.startsWith('0')) {
+      phone = '+213${phone.substring(1)}';
+    } else if (!phone.startsWith('+')) {
       _showMessage(
-        _isEmailLogin
-            ? 'Veuillez entrer votre adresse e-mail.'
-            : 'Veuillez entrer votre numéro de téléphone.',
+        'Entrez votre numéro au format +213XXXXXXXXX.',
       );
       return;
     }
 
-    if (password.isEmpty) {
-      _showMessage('Veuillez entrer votre mot de passe.');
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phone,
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          try {
+            await FirebaseAuth.instance.signInWithCredential(credential);
+
+            if (!mounted) return;
+
+            Navigator.pushReplacementNamed(
+              context,
+              '/home',
+            );
+          } on FirebaseAuthException catch (e) {
+            if (mounted) {
+              _showMessage(
+                e.message ?? 'Impossible de vous connecter.',
+              );
+            }
+          }
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          String message;
+
+          switch (e.code) {
+            case 'invalid-phone-number':
+              message = 'Numéro de téléphone invalide.';
+              break;
+
+            case 'too-many-requests':
+              message = 'Trop de tentatives. Réessayez plus tard.';
+              break;
+
+            case 'quota-exceeded':
+              message = 'Limite SMS atteinte. Réessayez plus tard.';
+              break;
+
+            default:
+              message = e.message ?? 'Impossible d’envoyer le SMS.';
+          }
+
+          if (mounted) {
+            _showMessage(message);
+          }
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (!mounted) return;
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => PhoneLoginVerificationScreen(
+                verificationId: verificationId,
+                phone: phone,
+              ),
+            ),
+          );
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
+      );
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        _showMessage(
+          e.message ?? 'Une erreur est survenue.',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showMessage('Une erreur est survenue.');
+      }
+    }
+  }
+
+  Future<void> _handleForgotPassword() async {
+    final email = _emailController.text.trim();
+
+    if (email.isEmpty) {
+      _showMessage(
+        'Veuillez saisir votre adresse e-mail.',
+      );
       return;
     }
 
-    // Firebase sera branché après.
-    Navigator.pushReplacementNamed(
-      context,
-      '/home',
-    );
-  }
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(
+        email: email,
+      );
 
-  void _handleForgotPassword() {
-    _showMessage(
-        'La récupération du mot de passe sera disponible prochainement.');
+      if (!mounted) return;
+
+      _showMessage(
+        'Un lien de réinitialisation a été envoyé à votre adresse e-mail.',
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+
+      String message;
+
+      switch (e.code) {
+        case 'invalid-email':
+          message = 'Adresse e-mail invalide.';
+          break;
+
+        case 'user-not-found':
+          message = 'Aucun compte associé à cette adresse e-mail.';
+          break;
+
+        case 'too-many-requests':
+          message = 'Trop de tentatives. Réessayez plus tard.';
+          break;
+
+        default:
+          message = 'Impossible d’envoyer l’e-mail de réinitialisation.';
+      }
+
+      _showMessage(message);
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        'Une erreur est survenue. Veuillez réessayer.',
+      );
+    }
   }
 
   // ============================================================
@@ -669,13 +950,56 @@ class _LoginScreenState extends State<LoginScreen> {
   // ============================================================
 
   void _showMessage(String message) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
         behavior: SnackBarBehavior.floating,
-        backgroundColor: dark,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+        duration: const Duration(seconds: 4),
+        content: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(
+              color: primaryBlue,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: primaryBlue.withOpacity(0.12),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_outline_rounded,
+                color: primaryBlue,
+                size: 23,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: dark,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    height: 1.35,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

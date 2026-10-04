@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class QrScreen extends StatefulWidget {
@@ -12,24 +13,37 @@ class QrScreen extends StatefulWidget {
 
 class _QrScreenState extends State<QrScreen> {
   // ============================================================
-  // DESIGN TOKENS — cohérents avec HomeScreen
+  // DESIGN TOKENS
   // ============================================================
 
   static const Color bgLight = Color(0xFFF8FAFC);
   static const Color primaryBlue = Color(0xFF1953FF);
   static const Color textDark = Color(0xFF0F172A);
   static const Color textMuted = Color(0xFF64748B);
+  static const Color danger = Color(0xFFE5484D);
+
+  // ============================================================
+  // UTILISATEUR FIREBASE
+  // ============================================================
+
+  User? get _currentUser {
+    return FirebaseAuth.instance.currentUser;
+  }
 
   // ============================================================
   // DONNÉES DU QR
   // ============================================================
 
   String get _qrData {
+    final user = _currentUser;
+
+    if (user == null) {
+      return '';
+    }
+
     final data = {
       'type': 'moovly_transport',
-      'passenger_id': 'MV-20481',
-      'user': 'Lynda Rahab',
-      'status': 'active',
+      'userId': user.uid,
     };
 
     return jsonEncode(data);
@@ -41,6 +55,8 @@ class _QrScreenState extends State<QrScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = _currentUser;
+
     return Scaffold(
       backgroundColor: bgLight,
 
@@ -62,17 +78,27 @@ class _QrScreenState extends State<QrScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        // TITRE
+                        // ==================================================
+                        // HEADER
+                        // ==================================================
+
                         _buildHeader(),
 
                         const SizedBox(height: 35),
 
+                        // ==================================================
                         // QR
-                        _buildQr(),
+                        // ==================================================
+
+                        if (user != null) _buildQr() else _buildNoUser(),
 
                         const SizedBox(height: 25),
 
-                        _buildPassenger(),
+                        // ==================================================
+                        // INFORMATIONS PASSAGER
+                        // ==================================================
+
+                        if (user != null) _buildPassenger(),
                       ],
                     ),
                   ),
@@ -139,27 +165,22 @@ class _QrScreenState extends State<QrScreen> {
       ),
       child: Center(
         child: QrImageView(
-          // Données réellement encodées dans le QR
+          // Données réelles de l'utilisateur Firebase
           data: _qrData,
 
-          // Génération automatique de la taille du QR
           version: QrVersions.auto,
 
-          // Taille du QR
           size: 260,
 
           backgroundColor: Colors.white,
 
-          // Niveau de correction
           errorCorrectionLevel: QrErrorCorrectLevel.M,
 
-          // Carrés des coins
           eyeStyle: const QrEyeStyle(
             eyeShape: QrEyeShape.square,
             color: textDark,
           ),
 
-          // Modules du QR
           dataModuleStyle: const QrDataModuleStyle(
             dataModuleShape: QrDataModuleShape.square,
             color: textDark,
@@ -174,21 +195,83 @@ class _QrScreenState extends State<QrScreen> {
   // ============================================================
 
   Widget _buildPassenger() {
+    final user = _currentUser;
+
+    if (user == null) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 14,
-        vertical: 6,
+        vertical: 7,
       ),
       decoration: BoxDecoration(
         color: primaryBlue.withOpacity(0.08),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Text(
-        'MV-20481',
-        style: TextStyle(
+      child: Text(
+        'ID : ${user.uid}',
+        style: const TextStyle(
           color: primaryBlue,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+
+  // ============================================================
+  // AUCUN UTILISATEUR
+  // ============================================================
+
+  Widget _buildNoUser() {
+    return Container(
+      width: 300,
+      height: 300,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(30),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.person_off_rounded,
+                color: danger,
+                size: 45,
+              ),
+              SizedBox(height: 15),
+              Text(
+                'Utilisateur non connecté',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textDark,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              SizedBox(height: 7),
+              Text(
+                'Connectez-vous pour afficher votre QR.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: textMuted,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart' show LatLng;
 import 'package:geolocator/geolocator.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../bus/map_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../profile/profile_screen.dart';
@@ -31,6 +33,483 @@ class _HomeScreenState extends State<HomeScreen> {
   final Color _goldColor = const Color(0xFFD4AF37);
   final Color _borderColor = const Color(0xFFE2E8F0);
 
+  String _firstName = '';
+  String _lastName = '';
+  String _email = '';
+  String _phone = '';
+  double _balance = 0;
+  String _wilaya = '';
+
+  // Abonnement
+  String _subscriptionType = '';
+  DateTime? _subscriptionExpiration;
+  bool _hasActiveSubscription = false;
+
+  // Liste complète des 69 wilayas
+  // Code officiel + nom
+  final Map<String, String> _wilayas = {
+    '01': 'Adrar',
+    '02': 'Chlef',
+    '03': 'Laghouat',
+    '04': 'Oum El Bouaghi',
+    '05': 'Batna',
+    '06': 'Béjaïa',
+    '07': 'Biskra',
+    '08': 'Béchar',
+    '09': 'Blida',
+    '10': 'Bouira',
+    '11': 'Tamanrasset',
+    '12': 'Tébessa',
+    '13': 'Tlemcen',
+    '14': 'Tiaret',
+    '15': 'Tizi Ouzou',
+    '16': 'Alger',
+    '17': 'Djelfa',
+    '18': 'Jijel',
+    '19': 'Sétif',
+    '20': 'Saïda',
+    '21': 'Skikda',
+    '22': 'Sidi Bel Abbès',
+    '23': 'Annaba',
+    '24': 'Guelma',
+    '25': 'Constantine',
+    '26': 'Médéa',
+    '27': 'Mostaganem',
+    '28': 'M’Sila',
+    '29': 'Mascara',
+    '30': 'Ouargla',
+    '31': 'Oran',
+    '32': 'El Bayadh',
+    '33': 'Illizi',
+    '34': 'Bordj Bou Arréridj',
+    '35': 'Boumerdès',
+    '36': 'El Tarf',
+    '37': 'Tindouf',
+    '38': 'Tissemsilt',
+    '39': 'El Oued',
+    '40': 'Khenchela',
+    '41': 'Souk Ahras',
+    '42': 'Tipaza',
+    '43': 'Mila',
+    '44': 'Aïn Defla',
+    '45': 'Naâma',
+    '46': 'Aïn Témouchent',
+    '47': 'Ghardaïa',
+    '48': 'Relizane',
+    '49': 'Timimoun',
+    '50': 'Bordj Badji Mokhtar',
+    '51': 'Ouled Djellal',
+    '52': 'Béni Abbès',
+    '53': 'In Salah',
+    '54': 'In Guezzam',
+    '55': 'Touggourt',
+    '56': 'Djanet',
+    '57': 'El Meghaier',
+    '58': 'El Meniaâ',
+    '59': 'Aflou',
+    '60': 'Barika',
+    '61': 'El Kantara',
+    '62': 'Bir El Ater',
+    '63': 'El Aricha',
+    '64': 'Ksar Chellala',
+    '65': 'Aïn Oussara',
+    '66': 'Messaad',
+    '67': 'Ksar El Boukhari',
+    '68': 'Bou Saâda',
+    '69': 'El Abiodh Sidi Cheikh',
+  };
+
+  Future<void> _selectWilaya() async {
+    String search = '';
+
+    final selectedWilaya = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final filteredWilayas = _wilayas.entries
+                .where(
+                  (entry) =>
+                      entry.value
+                          .toLowerCase()
+                          .contains(search.toLowerCase()) ||
+                      entry.key.contains(search),
+                )
+                .toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.82,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 12),
+
+                    // Barre supérieure
+                    Container(
+                      width: 42,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 42,
+                            height: 42,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1953FF).withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(13),
+                            ),
+                            child: const Icon(
+                              Icons.location_on_rounded,
+                              color: Color(0xFF1953FF),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Choisir votre wilaya',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                SizedBox(height: 2),
+                                Text(
+                                  'Sélectionnez votre localisation',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    // Recherche
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: TextField(
+                        onChanged: (value) {
+                          setModalState(() {
+                            search = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher une wilaya...',
+                          prefixIcon: const Icon(
+                            Icons.search_rounded,
+                            color: Color(0xFF64748B),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF8FAFC),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(
+                              color: Color(0xFFE2E8F0),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(15),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF1953FF),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                        itemCount: filteredWilayas.length,
+                        itemBuilder: (context, index) {
+                          final entry = filteredWilayas[index];
+                          final code = entry.key;
+                          final wilaya = entry.value;
+
+                          return ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            leading: Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  code,
+                                  style: const TextStyle(
+                                    color: Color(0xFF1953FF),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              wilaya,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            trailing: const Icon(
+                              Icons.chevron_right_rounded,
+                              color: Color(0xFF94A3B8),
+                            ),
+                            onTap: () {
+                              Navigator.pop(context, wilaya);
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (selectedWilaya == null || selectedWilaya.isEmpty) {
+      return;
+    }
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return;
+    }
+
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+        'wilaya': selectedWilaya,
+      });
+
+      if (!mounted) return;
+
+      setState(() {
+        _wilaya = selectedWilaya;
+      });
+
+      debugPrint('Wilaya sélectionnée : $_wilaya');
+    } catch (e) {
+      debugPrint('Erreur sauvegarde wilaya : $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Impossible d’enregistrer la wilaya.',
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _loadWalletData();
+    _loadSubscriptionData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        debugPrint('Aucun utilisateur Firebase connecté.');
+        return;
+      }
+
+      debugPrint('Utilisateur connecté : ${user.email}');
+      debugPrint('UID : ${user.uid}');
+
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (!doc.exists) {
+        debugPrint('Document users/${user.uid} introuvable.');
+        return;
+      }
+
+      final data = doc.data();
+
+      if (data == null) return;
+
+      final fullName = data['name']?.toString() ?? '';
+      final wilaya = data['wilaya']?.toString() ?? '';
+
+      debugPrint('Nom récupéré : $fullName');
+      debugPrint('Wilaya récupérée : $wilaya');
+
+      if (!mounted) return;
+
+      setState(() {
+        _firstName = fullName;
+        _lastName = '';
+        _email = data['email']?.toString() ?? user.email ?? '';
+        _phone = data['phone']?.toString() ?? '';
+        _wilaya = wilaya;
+      });
+    } catch (e) {
+      debugPrint('Erreur chargement utilisateur : $e');
+    }
+  }
+
+  Future<void> _loadWalletData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        debugPrint('Aucun utilisateur Firebase connecté.');
+        return;
+      }
+
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('carte')
+          .where('id_user', isEqualTo: userRef)
+          .limit(1)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        debugPrint('Aucune carte trouvée pour cet utilisateur.');
+        return;
+      }
+
+      final data = snapshot.docs.first.data();
+
+      if (!mounted) return;
+
+      setState(() {
+        _balance = (data['solde'] ?? 0).toDouble();
+      });
+
+      debugPrint('Solde récupéré : $_balance DZD');
+    } catch (e) {
+      debugPrint('Erreur chargement wallet : $e');
+    }
+  }
+
+  Future<void> _loadSubscriptionData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        debugPrint('SUBSCRIPTION : aucun utilisateur connecté');
+        return;
+      }
+
+      debugPrint('SUBSCRIPTION : utilisateur ${user.uid}');
+
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('subscriptions')
+          .where('id_user', isEqualTo: userRef)
+          .where('statut', isEqualTo: 'actif')
+          .limit(1)
+          .get();
+
+      debugPrint(
+        'SUBSCRIPTION : ${snapshot.docs.length} abonnement(s) actif(s) trouvé(s)',
+      );
+
+      if (snapshot.docs.isEmpty) {
+        if (!mounted) return;
+
+        setState(() {
+          _hasActiveSubscription = false;
+          _subscriptionType = '';
+          _subscriptionExpiration = null;
+        });
+
+        return;
+      }
+
+      final data = snapshot.docs.first.data();
+
+      debugPrint('SUBSCRIPTION DATA : $data');
+
+      final type = data['type'];
+
+      final expiration = data['date_expiration'];
+
+      DateTime? expirationDate;
+
+      if (expiration is Timestamp) {
+        expirationDate = expiration.toDate();
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _hasActiveSubscription = true;
+        _subscriptionType = type?.toString() ?? '';
+        _subscriptionExpiration = expirationDate;
+      });
+
+      debugPrint('SUBSCRIPTION TYPE : $_subscriptionType');
+      debugPrint('SUBSCRIPTION EXPIRATION : $_subscriptionExpiration');
+    } catch (e, stackTrace) {
+      debugPrint('SUBSCRIPTION ERROR : $e');
+      debugPrint('$stackTrace');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,7 +531,15 @@ class _HomeScreenState extends State<HomeScreen> {
       case 2:
         return const QrScreen();
       case 3:
-        return const WalletScreen();
+        return WalletScreen(
+          onBalanceChanged: (newBalance) {
+            if (mounted) {
+              setState(() {
+                _balance = newBalance;
+              });
+            }
+          },
+        );
       case 4:
         return const ProfileScreen();
       default:
@@ -105,7 +592,7 @@ class _HomeScreenState extends State<HomeScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Bonjour, Lynda 👋",
+              "Bonjour, ${_firstName.isNotEmpty ? _firstName : '👋'} 👋",
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -116,14 +603,34 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(Icons.location_on_rounded, size: 14, color: _primaryBlue),
-                const SizedBox(width: 4),
-                Text(
-                  "Bouira, Algérie",
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: _textMuted,
+                GestureDetector(
+                  onTap: _selectWilaya,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.location_on_rounded,
+                        size: 14,
+                        color: _primaryBlue,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _wilaya.isNotEmpty
+                            ? '${_wilaya.contains('—') ? _wilaya.split('—').last.trim() : _wilaya}, Algérie'
+                            : 'Choisir votre wilaya',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _wilaya.isNotEmpty ? _textMuted : _primaryBlue,
+                        ),
+                      ),
+                      const SizedBox(width: 3),
+                      Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 16,
+                        color: _textMuted,
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -146,8 +653,11 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Stack(
             children: [
               IconButton(
-                icon: Icon(Icons.notifications_outlined,
-                    color: _textDark, size: 20),
+                icon: Icon(
+                  Icons.notifications_outlined,
+                  color: _textDark,
+                  size: 20,
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -156,7 +666,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   );
                 },
-                constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                constraints: const BoxConstraints(
+                  minWidth: 44,
+                  minHeight: 44,
+                ),
                 padding: EdgeInsets.zero,
               ),
               Positioned(
@@ -168,7 +681,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(
                     color: _successColor,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 1.5),
+                    border: Border.all(
+                      color: Colors.white,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -205,7 +721,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(30),
         child: Stack(
           children: [
-            // Forme décorative 1
+            // Forme décorative
             Positioned(
               right: -55,
               top: -65,
@@ -219,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Forme décorative 2
+            // Forme décorative
             Positioned(
               right: -20,
               bottom: -85,
@@ -233,7 +749,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Forme décorative 3
+            // Forme décorative
             Positioned(
               left: -70,
               bottom: -90,
@@ -247,32 +763,32 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // Contenu
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 22, 24, 22),
+              padding: const EdgeInsets.fromLTRB(22, 17, 22, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // TOP : Wallet + QR
+                  // TOP
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
                           Container(
-                            width: 48,
-                            height: 48,
+                            width: 46,
+                            height: 46,
                             decoration: BoxDecoration(
                               color: Colors.white.withOpacity(0.14),
-                              borderRadius: BorderRadius.circular(15),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(
                               Icons.account_balance_wallet_rounded,
                               color: Colors.white,
-                              size: 24,
+                              size: 23,
                             ),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(width: 10),
                           const Text(
                             "Wallet",
                             style: TextStyle(
@@ -290,67 +806,124 @@ class _HomeScreenState extends State<HomeScreen> {
                           setState(() => _currentIndex = 2);
                         },
                         child: Container(
-                          width: 52,
-                          height: 52,
+                          width: 48,
+                          height: 48,
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.13),
-                            borderRadius: BorderRadius.circular(16),
+                            borderRadius: BorderRadius.circular(15),
                             border: Border.all(
                               color: Colors.white.withOpacity(0.25),
-                              width: 1,
                             ),
                           ),
                           child: const Icon(
                             Icons.qr_code_2_rounded,
                             color: Colors.white,
-                            size: 28,
+                            size: 26,
                           ),
                         ),
                       ),
                     ],
                   ),
 
-                  const Spacer(),
+                  const SizedBox(height: 15),
 
                   // SOLDE
                   Text(
                     "Solde disponible",
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.72),
-                      fontSize: 13,
+                      fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
 
-                  const SizedBox(height: 3),
+                  const SizedBox(height: 2),
 
-                  const Text(
-                    "0 DZD",
-                    style: TextStyle(
+                  Text(
+                    "${_balance.toStringAsFixed(0)} DZD",
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 38,
+                      fontSize: 36,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -1,
                     ),
                   ),
 
-                  const SizedBox(height: 15),
+                  // ABONNEMENT
+                  if (_hasActiveSubscription) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _subscriptionType.toLowerCase() == 'gold'
+                                ? _goldColor
+                                : Colors.white.withOpacity(0.18),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            _subscriptionType.toUpperCase(),
+                            style: TextStyle(
+                              color: _subscriptionType.toLowerCase() == 'gold'
+                                  ? const Color(0xFF0F172A)
+                                  : Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _subscriptionExpiration != null
+                                ? "Expire le "
+                                    "${_subscriptionExpiration!.day.toString().padLeft(2, '0')}/"
+                                    "${_subscriptionExpiration!.month.toString().padLeft(2, '0')}/"
+                                    "${_subscriptionExpiration!.year}"
+                                : "Abonnement actif",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.72),
+                              fontSize: 9,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  const SizedBox(height: 7),
 
                   // RECHARGER
-                  Align(
-                    alignment: Alignment.centerLeft,
+                  SizedBox(
+                    height: 36,
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        showRechargeSheet(context);
+                      onPressed: () async {
+                        await showRechargeSheet(
+                          context,
+                          onBalanceChanged: (newBalance) {
+                            if (mounted) {
+                              setState(() {
+                                _balance = newBalance;
+                              });
+                            }
+                          },
+                        );
                       },
                       icon: const Icon(
                         Icons.add_rounded,
-                        size: 17,
+                        size: 16,
                       ),
                       label: const Text(
                         "Recharger",
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 12,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -359,11 +932,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         foregroundColor: const Color(0xFF2855D9),
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 11,
+                          horizontal: 18,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(13),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
@@ -888,7 +1460,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.white.withOpacity(0.20),
                 ),
               ),
-              child: Center(
+              child: const Center(
                 child: Icon(
                   Icons.auto_awesome_rounded,
                   color: Colors.white,
@@ -924,25 +1496,44 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             _buildNavItem(0, Icons.home_rounded, "Accueil"),
-            _buildNavItem(1, Icons.directions_bus_filled_rounded, "Bus"),
+            _buildNavItem(
+              1,
+              Icons.directions_bus_filled_rounded,
+              "Bus",
+            ),
             _buildQrNavItem(2, Icons.qr_code_rounded),
-            _buildNavItem(3, Icons.account_balance_wallet_rounded, "Wallet"),
-            _buildNavItem(4, Icons.person_rounded, "Profil"),
+            _buildNavItem(
+              3,
+              Icons.account_balance_wallet_rounded,
+              "Wallet",
+            ),
+            _buildNavItem(
+              4,
+              Icons.person_rounded,
+              "Profil",
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(int index, IconData icon, String label) {
+  Widget _buildNavItem(
+    int index,
+    IconData icon,
+    String label,
+  ) {
     final isSelected = _currentIndex == index;
+
     return InkWell(
       onTap: () => setState(() => _currentIndex = index),
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding:
-            EdgeInsets.symmetric(horizontal: isSelected ? 12 : 8, vertical: 6),
+        padding: EdgeInsets.symmetric(
+          horizontal: isSelected ? 12 : 8,
+          vertical: 6,
+        ),
         decoration: BoxDecoration(
           color:
               isSelected ? _primaryBlue.withOpacity(0.1) : Colors.transparent,
@@ -973,8 +1564,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildQrNavItem(int index, IconData icon) {
+  Widget _buildQrNavItem(
+    int index,
+    IconData icon,
+  ) {
     final isSelected = _currentIndex == index;
+
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       child: Container(
@@ -1017,10 +1612,15 @@ class _HomeScreenState extends State<HomeScreen> {
 class _MapGridPainter extends CustomPainter {
   final Color lineColor;
 
-  _MapGridPainter({required this.lineColor});
+  _MapGridPainter({
+    required this.lineColor,
+  });
 
   @override
-  void paint(Canvas canvas, Size size) {
+  void paint(
+    Canvas canvas,
+    Size size,
+  ) {
     final paint = Paint()
       ..color = lineColor.withOpacity(0.5)
       ..strokeWidth = 1.5
@@ -1028,7 +1628,11 @@ class _MapGridPainter extends CustomPainter {
 
     final path = Path();
 
-    path.moveTo(0, size.height * 0.3);
+    path.moveTo(
+      0,
+      size.height * 0.3,
+    );
+
     path.quadraticBezierTo(
       size.width * 0.4,
       size.height * 0.1,
@@ -1036,7 +1640,11 @@ class _MapGridPainter extends CustomPainter {
       size.height * 0.4,
     );
 
-    path.moveTo(size.width * 0.2, 0);
+    path.moveTo(
+      size.width * 0.2,
+      0,
+    );
+
     path.quadraticBezierTo(
       size.width * 0.6,
       size.height * 0.7,
@@ -1044,9 +1652,15 @@ class _MapGridPainter extends CustomPainter {
       size.height,
     );
 
-    canvas.drawPath(path, paint);
+    canvas.drawPath(
+      path,
+      paint,
+    );
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(
+    covariant CustomPainter oldDelegate,
+  ) =>
+      false;
 }

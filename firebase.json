@@ -1,0 +1,51 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "moovly-9b6e3",
+          "appId": "1:394581004334:android:2a1d27c58b72e7a635cfbf",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "moovly-9b6e3",
+          "configurations": {
+            "android": "1:394581004334:android:2a1d27c58b72e7a635cfbf",
+            "ios": "1:394581004334:ios:b998cb7e19a87c6e35cfbf",
+            "macos": "1:394581004334:ios:b998cb7e19a87c6e35cfbf",
+            "web": "1:394581004334:web:70b79ad52d9625ef35cfbf",
+            "windows": "1:394581004334:web:131f6d70e17d40f135cfbf"
+          }
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "source": "functions"
+    },
+    {
+      "source": "moovly-ai",
+      "codebase": "moovly-ai",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
